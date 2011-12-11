@@ -15,6 +15,12 @@ import org.iocaste.shell.common.ViewData;
 
 public class Main extends AbstractPage {
 
+    public final void add(ControlData cdata, ViewData vdata) {
+        Table itens = (Table)vdata.getElement("itens");
+        
+        insertitem(itens);
+    }
+    
     public final void create(ControlData cdata, ViewData vdata) {
         String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
         
@@ -22,6 +28,14 @@ public class Main extends AbstractPage {
         cdata.addParameter("mode", "create");
         cdata.addParameter("modelname", modelname);
         cdata.redirect(null, "structure");
+    }
+    
+    private final void insertitem(Table itens) {
+        TableItem item = new TableItem(itens);
+        
+        item.add(new TextField(itens, "item.name"));
+        item.add(new TextField(itens, "item.type"));
+        item.add(new TextField(itens, "item.length"));
     }
     
     public final void main(ViewData view) {
@@ -44,7 +58,12 @@ public class Main extends AbstractPage {
     }
     
     public final void show(ControlData cdata, ViewData vdata) {
+        String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
         
+        cdata.setReloadableView(true);
+        cdata.addParameter("mode", "show");
+        cdata.addParameter("modelname", modelname);
+        cdata.redirect(null, "structure");
     }
     
     public final void structure(ViewData vdata) {
@@ -61,7 +80,6 @@ public class Main extends AbstractPage {
         DataItem modeltable = new DataItem(structure, Const.TEXT_FIELD,
                 "modeltable");
         Table itens = new Table(main, 3, "itens");
-        TableItem item = new TableItem(itens);
         
         modelname.setValue(name);
         modelname.setEnabled(false);
@@ -77,6 +95,8 @@ public class Main extends AbstractPage {
             new Button(main, "save");
             new Button(main, "add");
             new Button(main, "deleteitem");
+            
+            insertitem(itens);
         }
         
         if (mode.equals("show"))
@@ -88,9 +108,7 @@ public class Main extends AbstractPage {
             new Button(main, "add");
             new Button(main, "deleteitem");
             
-            item.add(new TextField(itens, "item.name"));
-            item.add(new TextField(itens, "item.type"));
-            item.add(new TextField(itens, "item.length"));
+            insertitem(itens);
         }
         
         vdata.setFocus("modeltext");
@@ -100,6 +118,11 @@ public class Main extends AbstractPage {
     }
     
     public final void update(ControlData cdata, ViewData vdata) {
-
+        String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
+        
+        cdata.setReloadableView(true);
+        cdata.addParameter("mode", "update");
+        cdata.addParameter("modelname", modelname);
+        cdata.redirect(null, "structure");
     }
 }
