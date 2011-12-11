@@ -1,6 +1,7 @@
 package org.iocaste.datadict;
 
 import org.iocaste.shell.common.AbstractPage;
+import org.iocaste.shell.common.Button;
 import org.iocaste.shell.common.Const;
 import org.iocaste.shell.common.Container;
 import org.iocaste.shell.common.ControlData;
@@ -9,6 +10,7 @@ import org.iocaste.shell.common.DataItem;
 import org.iocaste.shell.common.Form;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableItem;
+import org.iocaste.shell.common.TextField;
 import org.iocaste.shell.common.ViewData;
 
 public class Main extends AbstractPage {
@@ -57,7 +59,7 @@ public class Main extends AbstractPage {
                 "modelclass");
         DataItem modeltable = new DataItem(structure, Const.TEXT_FIELD,
                 "modeltable");
-        Table itens = new Table(structure, 3, "itens");
+        Table itens = new Table(main, 3, "itens");
         TableItem item = new TableItem(itens);
         
         modelname.setValue(name);
@@ -67,9 +69,9 @@ public class Main extends AbstractPage {
         
         if (mode.equals("update")) {
             title = "datadict.update";
-            structure.addAction("save");
-            structure.addAction("add");
-            structure.addAction("deleteitem");
+            new Button(main, "save");
+            new Button(main, "add");
+            new Button(main, "deleteitem");
         }
         
         if (mode.equals("show"))
@@ -77,9 +79,13 @@ public class Main extends AbstractPage {
         
         if (mode.equals("create")) {
             title = "datadict.create";
-            structure.addAction("save");
-            structure.addAction("add");
-            structure.addAction("deleteitem");
+            new Button(main, "save");
+            new Button(main, "add");
+            new Button(main, "deleteitem");
+            
+            item.add(new TextField(itens, "item.name"));
+            item.add(new TextField(itens, "item.type"));
+            item.add(new TextField(itens, "item.length"));
         }
         
         vdata.setNavbarActionEnabled("back", true);
