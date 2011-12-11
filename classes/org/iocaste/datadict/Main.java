@@ -30,12 +30,24 @@ public class Main extends AbstractPage {
         cdata.redirect(null, "structure");
     }
     
+    public final void deleteitem(ControlData cdata, ViewData vdata) {
+        Table itens = (Table)vdata.getElement("itens");
+        TableItem[] marked = itens.getSelected();
+        
+        for (TableItem item : marked)
+            itens.remove(item);
+    }
+    
     private final void insertitem(Table itens) {
         TableItem item = new TableItem(itens);
+        int line = itens.getLength() - 1;
         
-        item.add(new TextField(itens, "item.name"));
-        item.add(new TextField(itens, "item.type"));
-        item.add(new TextField(itens, "item.length"));
+        item.add(new TextField(itens, new StringBuilder("item.name.").
+                append(line).toString()));
+        item.add(new TextField(itens, new StringBuilder("item.type.").
+                append(line).toString()));
+        item.add(new TextField(itens, new StringBuilder("item.length.").
+                append(line).toString()));
     }
     
     public final void main(ViewData view) {
@@ -86,9 +98,11 @@ public class Main extends AbstractPage {
         modeltext.setObligatory(true);
         modelclass.setObligatory(true);
         
-        itens.setHeaderName(0, "item.name");
-        itens.setHeaderName(1, "item.type");
-        itens.setHeaderName(2, "item.length");
+        itens.setMark(true);
+        itens.setHeaderName(0, "");
+        itens.setHeaderName(1, "item.name");
+        itens.setHeaderName(2, "item.type");
+        itens.setHeaderName(3, "item.length");
         
         if (mode.equals("update")) {
             title = "datadict.update";
