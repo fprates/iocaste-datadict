@@ -37,6 +37,7 @@ public class Main extends AbstractPage {
         modelform.addAction("update");
         modelform.addAction("delete");
         
+        view.setFocus("modelname");
         view.setNavbarActionEnabled("back", true);
         view.setTitle("datadict.utilities");
         view.addContainer(main);
@@ -67,6 +68,10 @@ public class Main extends AbstractPage {
         modeltext.setObligatory(true);
         modelclass.setObligatory(true);
         
+        itens.setHeaderName(0, "item.name");
+        itens.setHeaderName(1, "item.type");
+        itens.setHeaderName(2, "item.length");
+        
         if (mode.equals("update")) {
             title = "datadict.update";
             new Button(main, "save");
@@ -88,6 +93,7 @@ public class Main extends AbstractPage {
             item.add(new TextField(itens, "item.length"));
         }
         
+        vdata.setFocus("modeltext");
         vdata.setNavbarActionEnabled("back", true);
         vdata.setTitle(title);
         vdata.addContainer(main);
