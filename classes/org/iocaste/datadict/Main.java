@@ -1,5 +1,11 @@
 package org.iocaste.datadict;
 
+import java.awt.ItemSelectable;
+
+import org.iocaste.documents.common.DocumentModel;
+import org.iocaste.documents.common.DocumentModelItem;
+import org.iocaste.documents.common.Documents;
+import org.iocaste.documents.common.ExtendedObject;
 import org.iocaste.shell.common.AbstractPage;
 import org.iocaste.shell.common.Button;
 import org.iocaste.shell.common.Const;
@@ -7,6 +13,7 @@ import org.iocaste.shell.common.Container;
 import org.iocaste.shell.common.ControlData;
 import org.iocaste.shell.common.DataForm;
 import org.iocaste.shell.common.DataItem;
+import org.iocaste.shell.common.Element;
 import org.iocaste.shell.common.Form;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableItem;
@@ -14,7 +21,15 @@ import org.iocaste.shell.common.TextField;
 import org.iocaste.shell.common.ViewData;
 
 public class Main extends AbstractPage {
-
+    private static final String[] ITEM_NAMES = {
+        "item.name",
+        "item.tablefield",
+        "item.key", 
+        "item.type",
+        "item.length",
+        "item.text"
+    };
+    
     public final void add(ControlData cdata, ViewData vdata) {
         Table itens = (Table)vdata.getElement("itens");
         
@@ -40,14 +55,9 @@ public class Main extends AbstractPage {
     
     private final void insertitem(Table itens) {
         TableItem item = new TableItem(itens);
-        int line = itens.getLength() - 1;
         
-        item.add(new TextField(itens, new StringBuilder("item.name.").
-                append(line).toString()));
-        item.add(new TextField(itens, new StringBuilder("item.type.").
-                append(line).toString()));
-        item.add(new TextField(itens, new StringBuilder("item.length.").
-                append(line).toString()));
+        for (String itemname : ITEM_NAMES)
+            item.add(Const.TEXT_FIELD, itemname);
     }
     
     public final void main(ViewData view) {
@@ -67,6 +77,34 @@ public class Main extends AbstractPage {
         view.setNavbarActionEnabled("back", true);
         view.setTitle("datadict.utilities");
         view.addContainer(main);
+    }
+    
+    public final void save(ControlData cdata, ViewData vdata) throws Exception {
+        TableItem item;
+        DocumentModelItem modelitem;
+        ExtendedObject object;
+        Documents documents = new Documents(this);
+        DataForm structure = (DataForm)vdata.getElement("structure.form");
+        Table itens = (Table)vdata.getElement("itens");
+        DocumentModel model = new DocumentModel();
+        int i = 0;
+        
+        model.setName(structure.getValue("modelname"));
+        model.setClassName(structure.getValue("modelclass"));
+        model.setTableName(structure.getValue("modeltable"));
+        
+        for (Element element : itens.getElements()) {
+            if (element.getType() != Const.TABLE_ITEM)
+                continue;
+            
+            item = (TableItem)element;
+            modelitem = new DocumentModelItem();
+            modelitem.setIndex(i++);
+            modelitem.setName(itens.getValue(item, "item.name"));
+            modelitem.setTableFieldName(itens.getValue(item, "item.tablefield"));
+        }
+        
+        documents.createModel(model);
     }
     
     public final void show(ControlData cdata, ViewData vdata) {
@@ -91,18 +129,17 @@ public class Main extends AbstractPage {
                 "modelclass");
         DataItem modeltable = new DataItem(structure, Const.TEXT_FIELD,
                 "modeltable");
-        Table itens = new Table(main, 3, "itens");
+        Table itens = new Table(main, 5, "itens");
         
         modelname.setValue(name);
         modelname.setEnabled(false);
         modeltext.setObligatory(true);
         modelclass.setObligatory(true);
+        modeltable.setObligatory(true);
         
         itens.setMark(true);
-        itens.setHeaderName(0, "");
-        itens.setHeaderName(1, "item.name");
-        itens.setHeaderName(2, "item.type");
-        itens.setHeaderName(3, "item.length");
+        for (int i = 1; i <= ITEM_NAMES.length; i++)
+            itens.setHeaderName(i, ITEM_NAMES[i]);
         
         if (mode.equals("update")) {
             title = "datadict.update";
