@@ -1,11 +1,8 @@
 package org.iocaste.datadict;
 
-import java.awt.ItemSelectable;
-
 import org.iocaste.documents.common.DocumentModel;
 import org.iocaste.documents.common.DocumentModelItem;
 import org.iocaste.documents.common.Documents;
-import org.iocaste.documents.common.ExtendedObject;
 import org.iocaste.shell.common.AbstractPage;
 import org.iocaste.shell.common.Button;
 import org.iocaste.shell.common.Const;
@@ -17,7 +14,6 @@ import org.iocaste.shell.common.Element;
 import org.iocaste.shell.common.Form;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableItem;
-import org.iocaste.shell.common.TextField;
 import org.iocaste.shell.common.ViewData;
 
 public class Main extends AbstractPage {
@@ -57,7 +53,7 @@ public class Main extends AbstractPage {
         TableItem item = new TableItem(itens);
         
         for (String itemname : ITEM_NAMES)
-            item.add(Const.TEXT_FIELD, itemname);
+            item.add(Const.TEXT_FIELD, itemname, null);
     }
     
     public final void main(ViewData view) {
@@ -82,7 +78,6 @@ public class Main extends AbstractPage {
     public final void save(ControlData cdata, ViewData vdata) throws Exception {
         TableItem item;
         DocumentModelItem modelitem;
-        ExtendedObject object;
         Documents documents = new Documents(this);
         DataForm structure = (DataForm)vdata.getElement("structure.form");
         Table itens = (Table)vdata.getElement("itens");
@@ -105,6 +100,7 @@ public class Main extends AbstractPage {
         }
         
         documents.createModel(model);
+        documents.commit();
     }
     
     public final void show(ControlData cdata, ViewData vdata) {
@@ -117,6 +113,7 @@ public class Main extends AbstractPage {
     }
     
     public final void structure(ViewData vdata) {
+        int tcols = ITEM_NAMES.length;
         Container main = new Form(null, "datadict.structure");
         DataForm structure = new DataForm(main, "structure.form");
         String title = null, mode = (String)vdata.getParameter("mode");
@@ -129,7 +126,7 @@ public class Main extends AbstractPage {
                 "modelclass");
         DataItem modeltable = new DataItem(structure, Const.TEXT_FIELD,
                 "modeltable");
-        Table itens = new Table(main, 5, "itens");
+        Table itens = new Table(main, tcols, "itens");
         
         modelname.setValue(name);
         modelname.setEnabled(false);
@@ -138,8 +135,8 @@ public class Main extends AbstractPage {
         modeltable.setObligatory(true);
         
         itens.setMark(true);
-        for (int i = 1; i <= ITEM_NAMES.length; i++)
-            itens.setHeaderName(i, ITEM_NAMES[i]);
+        for (int i = 0; i < tcols; i++)
+            itens.setHeaderName(i+1, ITEM_NAMES[i]);
         
         if (mode.equals("update")) {
             title = "datadict.update";
