@@ -1,7 +1,9 @@
 package org.iocaste.datadict;
 
+import org.iocaste.documents.common.DataElement;
 import org.iocaste.documents.common.DocumentModel;
 import org.iocaste.documents.common.DocumentModelItem;
+import org.iocaste.documents.common.DocumentModelKey;
 import org.iocaste.documents.common.Documents;
 import org.iocaste.shell.common.AbstractPage;
 import org.iocaste.shell.common.Button;
@@ -20,6 +22,7 @@ public class Main extends AbstractPage {
     private static final String[] ITEM_NAMES = {
         "item.name",
         "item.tablefield",
+        "item.classfield",
         "item.key", 
         "item.type",
         "item.length",
@@ -85,6 +88,8 @@ public class Main extends AbstractPage {
     public final void save(ControlData cdata, ViewData vdata) throws Exception {
         TableItem item;
         DocumentModelItem modelitem;
+        DocumentModelKey modelkey;
+        DataElement dataelement;
         Documents documents = new Documents(this);
         DataForm structure = (DataForm)vdata.getElement("structure.form");
         Table itens = (Table)vdata.getElement("itens");
@@ -100,10 +105,31 @@ public class Main extends AbstractPage {
                 continue;
             
             item = (TableItem)element;
+            
+            dataelement = new DataElement();
+            dataelement.setLength(Integer.parseInt(
+                    itens.getValue(item, "item.length")));
+            dataelement.setType(Integer.parseInt(
+                    itens.getValue(item, "item.type")));
+            
             modelitem = new DocumentModelItem();
             modelitem.setIndex(i++);
             modelitem.setName(itens.getValue(item, "item.name"));
-            modelitem.setTableFieldName(itens.getValue(item, "item.tablefield"));
+            modelitem.setTableFieldName(itens.getValue(
+                    item, "item.tablefield"));
+            modelitem.setAttributeName(itens.getValue(item, "item.classfield"));
+            modelitem.setDataElement(dataelement);
+            
+            model.add(modelitem);
+            
+            if (!Boolean.parseBoolean(itens.getValue(item, "item.key")))
+                continue;
+        
+            modelkey = new DocumentModelKey();
+            modelkey.setModel(model);
+            modelkey.setModelItem(modelitem.getName());
+            
+            model.addKey(modelkey);
         }
         
         documents.createModel(model);
