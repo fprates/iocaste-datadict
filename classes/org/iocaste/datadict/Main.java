@@ -32,9 +32,16 @@ public class Main extends AbstractPage {
         insertitem(itens);
     }
     
-    public final void create(ControlData cdata, ViewData vdata) {
+    public final void create(ControlData cdata, ViewData vdata)
+            throws Exception {
+        Documents documents = new Documents(this);
         String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
         
+        if (documents.hasModel(modelname)) {
+            cdata.message(Const.ERROR, "model.already.exist");
+            return;
+        }
+            
         cdata.setReloadableView(true);
         cdata.addParameter("mode", "create");
         cdata.addParameter("modelname", modelname);
