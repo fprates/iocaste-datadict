@@ -1,12 +1,14 @@
 package org.iocaste.datadict;
 
 import org.iocaste.documents.common.DataElement;
+import org.iocaste.documents.common.DataType;
 import org.iocaste.documents.common.DocumentModel;
 import org.iocaste.documents.common.DocumentModelItem;
 import org.iocaste.documents.common.DocumentModelKey;
 import org.iocaste.documents.common.Documents;
 import org.iocaste.shell.common.AbstractPage;
 import org.iocaste.shell.common.Button;
+import org.iocaste.shell.common.CheckBox;
 import org.iocaste.shell.common.Const;
 import org.iocaste.shell.common.Container;
 import org.iocaste.shell.common.ControlData;
@@ -14,6 +16,7 @@ import org.iocaste.shell.common.DataForm;
 import org.iocaste.shell.common.DataItem;
 import org.iocaste.shell.common.Element;
 import org.iocaste.shell.common.Form;
+import org.iocaste.shell.common.ListBox;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableItem;
 import org.iocaste.shell.common.ViewData;
@@ -61,9 +64,27 @@ public class Main extends AbstractPage {
     
     private final void insertitem(Table itens) {
         TableItem item = new TableItem(itens);
+        ListBox list;
         
-        for (String itemname : ITEM_NAMES)
+        for (String itemname : ITEM_NAMES) {
+            if (itemname.equals("item.key")) {
+                item.add(Const.CHECKBOX, itemname, null);
+                continue;
+            }
+        
+            if (itemname.equals("item.type")) {
+                item.add(Const.LIST_BOX, itemname, null);
+                
+                list = (ListBox)itens.getElement(
+                        item.getComplexName("item.type"));
+                list.add("char", Integer.toString(DataType.CHAR));
+                list.add("numc", Integer.toString(DataType.NUMC));
+                
+                continue;
+            }
+            
             item.add(Const.TEXT_FIELD, itemname, null);
+        }
     }
     
     public final void main(ViewData view) {
@@ -90,6 +111,8 @@ public class Main extends AbstractPage {
         DocumentModelItem modelitem;
         DocumentModelKey modelkey;
         DataElement dataelement;
+        String itemname;
+        CheckBox key;
         Documents documents = new Documents(this);
         DataForm structure = (DataForm)vdata.getElement("structure.form");
         Table itens = (Table)vdata.getElement("itens");
@@ -105,8 +128,12 @@ public class Main extends AbstractPage {
                 continue;
             
             item = (TableItem)element;
+
+            itemname = new StringBuilder(model.getName()).append(".").append(
+                    itens.getValue(item, "item.name")).toString();
             
             dataelement = new DataElement();
+            dataelement.setName(itemname);
             dataelement.setLength(Integer.parseInt(
                     itens.getValue(item, "item.length")));
             dataelement.setType(Integer.parseInt(
@@ -114,26 +141,30 @@ public class Main extends AbstractPage {
             
             modelitem = new DocumentModelItem();
             modelitem.setIndex(i++);
-            modelitem.setName(itens.getValue(item, "item.name"));
+            modelitem.setName(itemname);
             modelitem.setTableFieldName(itens.getValue(
                     item, "item.tablefield"));
             modelitem.setAttributeName(itens.getValue(item, "item.classfield"));
             modelitem.setDataElement(dataelement);
+            modelitem.setDocumentModel(model);
             
             model.add(modelitem);
             
-            if (!Boolean.parseBoolean(itens.getValue(item, "item.key")))
+            key = (CheckBox)itens.getElement(item.getComplexName("item.key"));
+            if (!key.isSelected())
                 continue;
         
             modelkey = new DocumentModelKey();
             modelkey.setModel(model);
-            modelkey.setModelItem(modelitem.getName());
+            modelkey.setModelItem(itemname);
             
             model.addKey(modelkey);
         }
         
         documents.createModel(model);
         documents.commit();
+        
+        cdata.message(Const.STATUS, "table.saved.sucessfully");
     }
     
     public final void show(ControlData cdata, ViewData vdata) {
