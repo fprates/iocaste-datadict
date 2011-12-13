@@ -16,6 +16,7 @@ import org.iocaste.shell.common.DataForm;
 import org.iocaste.shell.common.DataItem;
 import org.iocaste.shell.common.Element;
 import org.iocaste.shell.common.Form;
+import org.iocaste.shell.common.InputComponent;
 import org.iocaste.shell.common.ListBox;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableItem;
@@ -63,12 +64,17 @@ public class Main extends AbstractPage {
     }
     
     private final void insertitem(Table itens) {
-        TableItem item = new TableItem(itens);
         ListBox list;
+        String itemname;
+        TableItem item = new TableItem(itens);
         
-        for (String itemname : ITEM_NAMES) {
+        for (DocumentModelItem modelitem : itens.getModel().getItens()) {
+            itemname = modelitem.getName();
+            
             if (itemname.equals("item.key")) {
                 item.add(Const.CHECKBOX, itemname, null);
+                setInputModelItem(itens, item, modelitem);
+                
                 continue;
             }
         
@@ -79,11 +85,13 @@ public class Main extends AbstractPage {
                         item.getComplexName("item.type"));
                 list.add("char", Integer.toString(DataType.CHAR));
                 list.add("numc", Integer.toString(DataType.NUMC));
+                list.setModelItem(modelitem);
                 
                 continue;
             }
             
             item.add(Const.TEXT_FIELD, itemname, null);
+            setInputModelItem(itens, item, modelitem);
         }
     }
     
@@ -167,6 +175,11 @@ public class Main extends AbstractPage {
         cdata.message(Const.STATUS, "table.saved.sucessfully");
     }
     
+    /**
+     * 
+     * @param cdata
+     * @param vdata
+     */
     public final void show(ControlData cdata, ViewData vdata) {
         String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
         
@@ -176,8 +189,49 @@ public class Main extends AbstractPage {
         cdata.redirect(null, "structure");
     }
     
+    /**
+     * 
+     * @return
+     */
+    private final DocumentModel getItensModel(String modelname) {
+        DataElement dataelement;
+        DocumentModelItem item;
+        DocumentModel model = new DocumentModel();
+        int i = 0;
+        
+        model.setName(modelname);
+        
+        for (String name : ITEM_NAMES) {
+            dataelement = new DataElement();
+            if (name.equals("item.length")) {
+                dataelement.setType(DataType.NUMC);
+                dataelement.setLength(3);
+            } else {
+                dataelement.setType(DataType.CHAR);
+            }
+            
+            item = new DocumentModelItem();
+            item.setName(name);
+            item.setDocumentModel(model);
+            item.setDataElement(dataelement);
+            item.setIndex(i++);
+            
+            model.add(item);
+        }
+        
+        return model;
+    }
+    
+    private final void setInputModelItem(Table itens, TableItem item,
+            DocumentModelItem modelitem) {
+        String itemname = modelitem.getName();
+        InputComponent input = (InputComponent)itens.getElement(
+                item.getComplexName(itemname));
+        
+        input.setModelItem(modelitem);
+    }
+    
     public final void structure(ViewData vdata) {
-        int tcols = ITEM_NAMES.length;
         Container main = new Form(null, "datadict.structure");
         DataForm structure = new DataForm(main, "structure.form");
         String title = null, mode = (String)vdata.getParameter("mode");
@@ -190,7 +244,8 @@ public class Main extends AbstractPage {
                 "modelclass");
         DataItem modeltable = new DataItem(structure, Const.TEXT_FIELD,
                 "modeltable");
-        Table itens = new Table(main, tcols, "itens");
+        Table itens = new Table(main, 0, "itens");
+        DocumentModel model = getItensModel("itens");
         
         modelname.setValue(name);
         modelname.setEnabled(false);
@@ -199,8 +254,7 @@ public class Main extends AbstractPage {
         modeltable.setObligatory(true);
         
         itens.setMark(true);
-        for (int i = 0; i < tcols; i++)
-            itens.setHeaderName(i+1, ITEM_NAMES[i]);
+        itens.importModel(model);
         
         if (mode.equals("update")) {
             title = "datadict.update";
