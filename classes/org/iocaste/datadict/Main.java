@@ -16,7 +16,6 @@ import org.iocaste.shell.common.DataForm;
 import org.iocaste.shell.common.DataItem;
 import org.iocaste.shell.common.Element;
 import org.iocaste.shell.common.Form;
-import org.iocaste.shell.common.InputComponent;
 import org.iocaste.shell.common.ListBox;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableItem;
@@ -65,33 +64,27 @@ public class Main extends AbstractPage {
     
     private final void insertitem(Table itens) {
         ListBox list;
-        String itemname;
         TableItem item = new TableItem(itens);
         
-        for (DocumentModelItem modelitem : itens.getModel().getItens()) {
-            itemname = modelitem.getName();
-            
-            if (itemname.equals("item.key")) {
-                item.add(Const.CHECKBOX, itemname, null);
-                setInputModelItem(itens, item, modelitem);
+        for (String name: ITEM_NAMES) {
+            if (name.equals("item.key")) {
+                item.add(Const.CHECKBOX, name, null);
                 
                 continue;
             }
         
-            if (itemname.equals("item.type")) {
-                item.add(Const.LIST_BOX, itemname, null);
+            if (name.equals("item.type")) {
+                item.add(Const.LIST_BOX, name, null);
                 
                 list = (ListBox)itens.getElement(
                         item.getComplexName("item.type"));
                 list.add("char", Integer.toString(DataType.CHAR));
                 list.add("numc", Integer.toString(DataType.NUMC));
-                list.setModelItem(modelitem);
                 
                 continue;
             }
             
-            item.add(Const.TEXT_FIELD, itemname, null);
-            setInputModelItem(itens, item, modelitem);
+            item.add(Const.TEXT_FIELD, name, null);
         }
     }
     
@@ -208,6 +201,7 @@ public class Main extends AbstractPage {
                 dataelement.setLength(3);
             } else {
                 dataelement.setType(DataType.CHAR);
+                dataelement.setLength(20);
             }
             
             item = new DocumentModelItem();
@@ -220,15 +214,6 @@ public class Main extends AbstractPage {
         }
         
         return model;
-    }
-    
-    private final void setInputModelItem(Table itens, TableItem item,
-            DocumentModelItem modelitem) {
-        String itemname = modelitem.getName();
-        InputComponent input = (InputComponent)itens.getElement(
-                item.getComplexName(itemname));
-        
-        input.setModelItem(modelitem);
     }
     
     public final void structure(ViewData vdata) {
