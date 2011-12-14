@@ -54,6 +54,22 @@ public class Main extends AbstractPage {
         cdata.redirect(null, "structure");
     }
     
+    public final void delete(ControlData cdata, ViewData vdata)
+            throws Exception {
+        Documents documents = new Documents(this);
+        String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
+        
+        if (!documents.hasModel(modelname)) {
+            cdata.message(Const.ERROR, "model.not.found");
+            return;
+        }
+        
+        documents.removeModel(modelname);
+        documents.commit();
+        
+        cdata.message(Const.STATUS, "model.removed.sucessfully");
+    }
+    
     public final void deleteitem(ControlData cdata, ViewData vdata) {
         Table itens = (Table)vdata.getElement("itens");
         TableItem[] marked = itens.getSelected();
