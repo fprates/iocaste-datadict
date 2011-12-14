@@ -97,8 +97,8 @@ public class Main extends AbstractPage {
         modelname.setObligatory(true);
         
         modelform.addAction("create");
-        modelform.addAction("show");
-        modelform.addAction("update");
+//        modelform.addAction("show");
+//        modelform.addAction("update");
         modelform.addAction("delete");
         
         view.setFocus("modelname");
@@ -129,22 +129,21 @@ public class Main extends AbstractPage {
                 continue;
             
             item = (TableItem)element;
-
-            itemname = new StringBuilder(model.getName()).append(".").append(
-                    itens.getValue(item, "item.name")).toString();
+            itemname = itens.getValue(item, "item.name");
             
             dataelement = new DataElement();
-            dataelement.setName(itemname);
+            dataelement.setName(new StringBuilder(model.getName()).append(".").
+                    append(itemname).toString());
             dataelement.setLength(Integer.parseInt(
                     itens.getValue(item, "item.length")));
             dataelement.setType(Integer.parseInt(
                     itens.getValue(item, "item.type")));
-            
+             
             modelitem = new DocumentModelItem();
             modelitem.setIndex(i++);
             modelitem.setName(itemname);
-            modelitem.setTableFieldName(itens.getValue(
-                    item, "item.tablefield"));
+            modelitem.setTableFieldName(itens.getValue(item,
+                    "item.tablefield"));
             modelitem.setAttributeName(itens.getValue(item, "item.classfield"));
             modelitem.setDataElement(dataelement);
             modelitem.setDocumentModel(model);
@@ -166,6 +165,7 @@ public class Main extends AbstractPage {
         documents.commit();
         
         cdata.message(Const.STATUS, "table.saved.sucessfully");
+        cdata.redirect(null, "main");
     }
     
     /**
