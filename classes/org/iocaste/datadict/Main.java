@@ -180,8 +180,8 @@ public class Main extends AbstractPage {
         documents.createModel(model);
         documents.commit();
         
-        cdata.message(Const.STATUS, "table.saved.sucessfully");
-        cdata.redirect(null, "main");
+        cdata.message(Const.STATUS, "table.saved.successfully");
+        back(cdata, vdata);
     }
     
     /**
