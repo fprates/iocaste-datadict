@@ -17,6 +17,7 @@ import org.iocaste.shell.common.DataItem;
 import org.iocaste.shell.common.Element;
 import org.iocaste.shell.common.Form;
 import org.iocaste.shell.common.ListBox;
+import org.iocaste.shell.common.SearchHelp;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableItem;
 import org.iocaste.shell.common.ViewData;
@@ -39,12 +40,23 @@ public class Main extends AbstractPage {
         "item.text"
     };
     
+    /**
+     * 
+     * @param cdata
+     * @param vdata
+     */
     public final void add(ControlData cdata, ViewData vdata) {
         Table itens = (Table)vdata.getElement("itens");
         
         insertitem(itens);
     }
     
+    /**
+     * 
+     * @param cdata
+     * @param vdata
+     * @throws Exception
+     */
     public final void create(ControlData cdata, ViewData vdata)
             throws Exception {
         Documents documents = new Documents(this);
@@ -61,6 +73,12 @@ public class Main extends AbstractPage {
         cdata.redirect(null, "structure");
     }
     
+    /**
+     * 
+     * @param cdata
+     * @param vdata
+     * @throws Exception
+     */
     public final void delete(ControlData cdata, ViewData vdata)
             throws Exception {
         Documents documents = new Documents(this);
@@ -77,6 +95,11 @@ public class Main extends AbstractPage {
         cdata.message(Const.STATUS, "model.removed.sucessfully");
     }
     
+    /**
+     * 
+     * @param cdata
+     * @param vdata
+     */
     public final void deleteitem(ControlData cdata, ViewData vdata) {
         Table itens = (Table)vdata.getElement("itens");
         TableItem[] marked = itens.getSelected();
@@ -85,6 +108,11 @@ public class Main extends AbstractPage {
             itens.remove(item);
     }
     
+    /**
+     * 
+     * @param name
+     * @return
+     */
     private final DocumentModel getHeaderModel(String name) {
         DocumentModelItem modelitem;
         DataElement dataelement;
@@ -147,6 +175,10 @@ public class Main extends AbstractPage {
         return model;
     }
     
+    /**
+     * 
+     * @param itens
+     */
     private final void insertitem(Table itens) {
         ListBox list;
         TableItem item = new TableItem(itens);
@@ -173,17 +205,26 @@ public class Main extends AbstractPage {
         }
     }
     
+    /**
+     * 
+     * @param view
+     */
     public final void main(ViewData view) {
         Container main = new Form(null, "datadict.main");
         DataForm modelform = new DataForm(main, "modelform");
         DataItem modelname = new DataItem(modelform, Const.TEXT_FIELD,
                 "modelname");
         DataElement dataelement = new DataElement();
+        SearchHelp search = new SearchHelp(main, "tablename");
         
         dataelement.setUpcase(true);
         dataelement.setLength(20);
         dataelement.setType(DataType.CHAR);
         
+        search.setModelName("MODEL");
+        search.addModelItemName("ITEM");
+        
+        modelname.setSearchHelp(search);
         modelname.setDataElement(dataelement);
         modelname.setObligatory(true);
         
@@ -198,6 +239,12 @@ public class Main extends AbstractPage {
         view.addContainer(main);
     }
     
+    /**
+     * 
+     * @param cdata
+     * @param vdata
+     * @throws Exception
+     */
     public final void save(ControlData cdata, ViewData vdata) throws Exception {
         TableItem item;
         DocumentModelItem modelitem;
@@ -273,6 +320,10 @@ public class Main extends AbstractPage {
         cdata.redirect(null, "structure");
     }
     
+    /**
+     * 
+     * @param vdata
+     */
     public final void structure(ViewData vdata) {
         DocumentModel model;
         DataItem dataitem;
@@ -330,6 +381,11 @@ public class Main extends AbstractPage {
         vdata.addContainer(main);
     }
     
+    /**
+     * 
+     * @param cdata
+     * @param vdata
+     */
     public final void update(ControlData cdata, ViewData vdata) {
         String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
         
