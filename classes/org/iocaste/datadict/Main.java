@@ -22,6 +22,13 @@ import org.iocaste.shell.common.TableItem;
 import org.iocaste.shell.common.ViewData;
 
 public class Main extends AbstractPage {
+    private static final String[] HEADER_NAMES = {
+        "modelname",
+        "modeltext",
+        "modelclass",
+        "modeltable"
+    };
+    
     private static final String[] ITEM_NAMES = {
         "item.name",
         "item.tablefield",
@@ -78,6 +85,68 @@ public class Main extends AbstractPage {
             itens.remove(item);
     }
     
+    private final DocumentModel getHeaderModel(String name) {
+        DocumentModelItem modelitem;
+        DataElement dataelement;
+        DocumentModel model = new DocumentModel();
+        int i = 0;
+        
+        for (String headername : HEADER_NAMES) {
+            dataelement = new DataElement();
+            dataelement.setLength(20);
+            dataelement.setUpcase(true);
+            
+            modelitem = new DocumentModelItem();
+            modelitem.setIndex(i++);
+            modelitem.setName(headername);
+            modelitem.setDocumentModel(model);
+            modelitem.setDataElement(dataelement);
+            
+            model.setName(name);
+            model.add(modelitem);
+        }
+        
+        return model;
+        
+    }
+    
+    /**
+     * 
+     * @param modelname
+     * @return
+     */
+    private final DocumentModel getItensModel(String modelname) {
+        DataElement dataelement;
+        DocumentModelItem item;
+        DocumentModel model = new DocumentModel();
+        int i = 0;
+        
+        model.setName(modelname);
+        
+        for (String name : ITEM_NAMES) {
+            dataelement = new DataElement();
+            dataelement.setUpcase(true);
+            
+            if (name.equals("item.length")) {
+                dataelement.setType(DataType.NUMC);
+                dataelement.setLength(3);
+            } else {
+                dataelement.setType(DataType.CHAR);
+                dataelement.setLength(20);
+            }
+            
+            item = new DocumentModelItem();
+            item.setName(name);
+            item.setDocumentModel(model);
+            item.setDataElement(dataelement);
+            item.setIndex(i++);
+            
+            model.add(item);
+        }
+        
+        return model;
+    }
+    
     private final void insertitem(Table itens) {
         ListBox list;
         TableItem item = new TableItem(itens);
@@ -109,7 +178,13 @@ public class Main extends AbstractPage {
         DataForm modelform = new DataForm(main, "modelform");
         DataItem modelname = new DataItem(modelform, Const.TEXT_FIELD,
                 "modelname");
+        DataElement dataelement = new DataElement();
         
+        dataelement.setUpcase(true);
+        dataelement.setLength(20);
+        dataelement.setType(DataType.CHAR);
+        
+        modelname.setDataElement(dataelement);
         modelname.setObligatory(true);
         
         modelform.addAction("create");
@@ -198,62 +273,33 @@ public class Main extends AbstractPage {
         cdata.redirect(null, "structure");
     }
     
-    /**
-     * 
-     * @return
-     */
-    private final DocumentModel getItensModel(String modelname) {
-        DataElement dataelement;
-        DocumentModelItem item;
-        DocumentModel model = new DocumentModel();
-        int i = 0;
-        
-        model.setName(modelname);
-        
-        for (String name : ITEM_NAMES) {
-            dataelement = new DataElement();
-            if (name.equals("item.length")) {
-                dataelement.setType(DataType.NUMC);
-                dataelement.setLength(3);
-            } else {
-                dataelement.setType(DataType.CHAR);
-                dataelement.setLength(20);
-            }
-            
-            item = new DocumentModelItem();
-            item.setName(name);
-            item.setDocumentModel(model);
-            item.setDataElement(dataelement);
-            item.setIndex(i++);
-            
-            model.add(item);
-        }
-        
-        return model;
-    }
-    
     public final void structure(ViewData vdata) {
+        DocumentModel model;
+        DataItem dataitem;
         Container main = new Form(null, "datadict.structure");
         DataForm structure = new DataForm(main, "structure.form");
         String title = null, mode = (String)vdata.getParameter("mode");
         String name = ((String)vdata.getParameter("modelname"));
-        DataItem modelname = new DataItem(structure, Const.TEXT_FIELD,
-                "modelname");
-        DataItem modeltext = new DataItem(structure, Const.TEXT_FIELD,
-                "modeltext");
-        DataItem modelclass = new DataItem(structure, Const.TEXT_FIELD,
-                "modelclass");
-        DataItem modeltable = new DataItem(structure, Const.TEXT_FIELD,
-                "modeltable");
         Table itens = new Table(main, 0, "itens");
-        DocumentModel model = getItensModel("itens");
         
-        modelname.setValue(name);
-        modelname.setEnabled(false);
-        modeltext.setObligatory(true);
-        modelclass.setObligatory(true);
-        modeltable.setObligatory(true);
+        model = getHeaderModel(name);
+        structure.importModel(model);
         
+        for (Element element : structure.getElements()) {
+            if (!element.isDataStorable())
+                continue;
+            
+            dataitem = (DataItem)element;
+            if (dataitem.getName().equals("modelname")) {
+                dataitem.setObligatory(false);
+                dataitem.setValue(name);
+                dataitem.setEnabled(false);
+            } else {
+                dataitem.setObligatory(true);
+            }
+        }
+        
+        model = getItensModel("itens");
         itens.setMark(true);
         itens.importModel(model);
         
