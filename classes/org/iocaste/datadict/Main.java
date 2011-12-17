@@ -228,7 +228,8 @@ public class Main extends AbstractPage {
         dataelement.setType(DataType.CHAR);
         
         search.setModelName("MODEL");
-        search.addModelItemName("ITEM");
+        search.addModelItemName("NAME");
+        search.setExport("NAME");
         
         modelname.setSearchHelp(search);
         modelname.setDataElement(dataelement);
