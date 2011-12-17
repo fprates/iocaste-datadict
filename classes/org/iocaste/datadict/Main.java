@@ -122,7 +122,11 @@ public class Main extends AbstractPage {
         for (String headername : HEADER_NAMES) {
             dataelement = new DataElement();
             dataelement.setLength(20);
-            dataelement.setUpcase(true);
+            
+            if (headername.equals("modelclass"))
+                dataelement.setUpcase(false);
+            else
+                dataelement.setUpcase(true);
             
             modelitem = new DocumentModelItem();
             modelitem.setIndex(i++);
@@ -154,14 +158,16 @@ public class Main extends AbstractPage {
         for (String name : ITEM_NAMES) {
             dataelement = new DataElement();
             dataelement.setUpcase(true);
+            dataelement.setType(DataType.CHAR);
+            dataelement.setLength(20);
             
             if (name.equals("item.length")) {
                 dataelement.setType(DataType.NUMC);
                 dataelement.setLength(3);
-            } else {
-                dataelement.setType(DataType.CHAR);
-                dataelement.setLength(20);
             }
+            
+            if (name.equals("item.classname"))
+                dataelement.setUpcase(false);
             
             item = new DocumentModelItem();
             item.setName(name);
