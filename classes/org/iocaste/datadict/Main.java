@@ -20,9 +20,14 @@ import org.iocaste.shell.common.ListBox;
 import org.iocaste.shell.common.SearchHelp;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableItem;
+import org.iocaste.shell.common.TextField;
 import org.iocaste.shell.common.ViewData;
 
 public class Main extends AbstractPage {
+    private static final byte CREATE = 0;
+    private static final byte SHOW = 1;
+    private static final byte UPDATE = 2;
+    
     private static final String[] HEADER_NAMES = {
         "modelname",
         "modeltext",
@@ -45,10 +50,10 @@ public class Main extends AbstractPage {
      * @param cdata
      * @param vdata
      */
-    public final void add(ControlData cdata, ViewData vdata) {
+    public final void add(ControlData cdata, byte mode, ViewData vdata) {
         Table itens = (Table)vdata.getElement("itens");
         
-        insertitem(itens);
+        insertItem(itens, mode, null);
     }
     
     /**
@@ -68,7 +73,7 @@ public class Main extends AbstractPage {
         }
             
         cdata.setReloadableView(true);
-        cdata.addParameter("mode", "create");
+        cdata.addParameter("mode", CREATE);
         cdata.addParameter("modelname", modelname);
         cdata.redirect(null, "structure");
     }
@@ -184,14 +189,81 @@ public class Main extends AbstractPage {
     /**
      * 
      * @param itens
+     * @param mode
+     * @param modelitem
      */
-    private final void insertitem(Table itens) {
+    private final void insertItem(Table itens, byte mode, DocumentModelItem modelitem) {
         ListBox list;
+        CheckBox checkbox;
+        TextField tfield;
+        DocumentModel model;
+        DataElement dataelement = (modelitem == null)?
+                null : modelitem.getDataElement();
         TableItem item = new TableItem(itens);
         
         for (String name: ITEM_NAMES) {
+            if (name.equals("item.tablefield")) {
+                item.add(Const.TEXT_FIELD, name, null);
+                
+                if (dataelement == null)
+                    continue;
+                
+                tfield = (TextField)item.getElement(name);
+                tfield.setValue(modelitem.getTableFieldName());
+                tfield.setEnabled((mode == SHOW)?false:true);
+                
+                continue;
+            }
+            
+            if (name.equals("item.classfield")) {
+                item.add(Const.TEXT_FIELD, name, null);
+                
+                if (dataelement == null)
+                    continue;
+                
+                tfield = (TextField)item.getElement(name);
+                tfield.setValue(modelitem.getAttributeName());
+                tfield.setEnabled((mode == SHOW)?false:true);
+                
+                continue;
+            }
+            
+            if (name.equals("item.name")) {
+                item.add(Const.TEXT_FIELD, name, null);
+                
+                if (dataelement == null)
+                    continue;
+                
+                tfield = (TextField)item.getElement(name);
+                tfield.setValue(modelitem.getName());
+                tfield.setEnabled((mode == SHOW)?false:true);
+                
+                continue;
+            }
+            
+            if (name.equals("item.length")) {
+                item.add(Const.TEXT_FIELD, name, null);
+                
+                if (dataelement == null)
+                    continue;
+                
+                tfield = (TextField)item.getElement(name);
+                tfield.setValue(Integer.toString(dataelement.getLength()));
+                tfield.setEnabled((mode == SHOW)?false:true);
+                
+                continue;
+            }
+            
             if (name.equals("item.key")) {
                 item.add(Const.CHECKBOX, name, null);
+                
+                if (dataelement == null)
+                    continue;
+                
+                model = modelitem.getDocumentModel();
+                checkbox = (CheckBox)item.getElement(name);
+                checkbox.setValue(model.isKey(modelitem)? "on" : "off");
+                checkbox.setEnabled((mode == SHOW)?false:true);
                 
                 continue;
             }
@@ -199,15 +271,13 @@ public class Main extends AbstractPage {
             if (name.equals("item.type")) {
                 item.add(Const.LIST_BOX, name, null);
                 
-                list = (ListBox)itens.getElement(
-                        item.getComplexName("item.type"));
+                list = (ListBox)item.getElement(name);
                 list.add("char", Integer.toString(DataType.CHAR));
                 list.add("numc", Integer.toString(DataType.NUMC));
+                list.setEnabled((mode == SHOW)?false:true);
                 
                 continue;
             }
-            
-            item.add(Const.TEXT_FIELD, name, null);
         }
     }
     
@@ -237,7 +307,7 @@ public class Main extends AbstractPage {
         modelname.setObligatory(true);
         
         modelform.addAction("create");
-//        modelform.addAction("show");
+        modelform.addAction("show");
 //        modelform.addAction("update");
         modelform.addAction("delete");
         
@@ -245,6 +315,68 @@ public class Main extends AbstractPage {
         view.setNavbarActionEnabled("back", true);
         view.setTitle("datadict.utilities");
         view.addContainer(main);
+    }
+    
+    /**
+     * 
+     * @param form
+     * @param modelname
+     * @param model
+     * @param mode
+     */
+    private final void prepareHeader(DataForm form, String modelname,
+            DocumentModel model, byte mode) {
+        String name;
+        DataItem dataitem;
+        
+        for (Element element : form.getElements()) {
+            if (!element.isDataStorable())
+                continue;
+            
+            dataitem = (DataItem)element;
+            name = dataitem.getName();
+            
+            if (name.equals("modelname")) {
+                dataitem.setObligatory(false);
+                dataitem.setValue(modelname);
+                dataitem.setEnabled(false);
+                continue;
+            }
+            
+            if (name.equals("modeltable")) {
+                dataitem.setEnabled((mode == SHOW)?false:true);
+                dataitem.setObligatory((mode == SHOW)?false:true);
+                
+                if (model == null)
+                    continue;
+                
+                dataitem.setValue(model.getTableName());
+                continue;
+            }
+            
+            if (name.equals("modelclass")) {
+                dataitem.setEnabled((mode == SHOW)?false:true);
+                dataitem.setObligatory((mode == SHOW)?false:true);
+                
+                if (model == null)
+                    continue;
+                
+                dataitem.setValue(model.getClassName());
+                continue;
+            }
+        }
+    }
+    
+    /**
+     * 
+     * @param itens
+     */
+    private final void prepareItens(Table itens, byte mode, DocumentModel model) {
+        if (model == null)
+            insertItem(itens, mode, null);
+        else
+            for (DocumentModelItem modelitem : model.getItens())
+                insertItem(itens, mode, modelitem);
     }
     
     /**
@@ -318,13 +450,23 @@ public class Main extends AbstractPage {
      * 
      * @param cdata
      * @param vdata
+     * @throws Exception 
      */
-    public final void show(ControlData cdata, ViewData vdata) {
+    public final void show(ControlData cdata, ViewData vdata) throws Exception {
+        DocumentModel model;
         String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
+        Documents documents = new Documents(this);
+        
+        if (!documents.hasModel(modelname)) {
+            cdata.message(Const.ERROR, "model.doesnt.exists");
+            return;
+        }
+        
+        model = documents.getModel(modelname);
         
         cdata.setReloadableView(true);
-        cdata.addParameter("mode", "show");
-        cdata.addParameter("modelname", modelname);
+        cdata.addParameter("mode", SHOW);
+        cdata.addParameter("model", model);
         cdata.redirect(null, "structure");
     }
     
@@ -333,54 +475,49 @@ public class Main extends AbstractPage {
      * @param vdata
      */
     public final void structure(ViewData vdata) {
-        DocumentModel model;
-        DataItem dataitem;
+        String title, modelname;
+        DocumentModel model, usermodel =
+                (DocumentModel)vdata.getParameter("model");
+        byte mode = (Byte)vdata.getParameter("mode");
         Container main = new Form(null, "datadict.structure");
         DataForm structure = new DataForm(main, "structure.form");
-        String title = null, mode = (String)vdata.getParameter("mode");
-        String name = ((String)vdata.getParameter("modelname"));
         Table itens = new Table(main, 0, "itens");
         
-        model = getHeaderModel(name);
-        structure.importModel(model);
+        if (mode == CREATE)
+            modelname = ((String)vdata.getParameter("modelname"));
+        else
+            modelname = usermodel.getName();
         
-        for (Element element : structure.getElements()) {
-            if (!element.isDataStorable())
-                continue;
-            
-            dataitem = (DataItem)element;
-            if (dataitem.getName().equals("modelname")) {
-                dataitem.setObligatory(false);
-                dataitem.setValue(name);
-                dataitem.setEnabled(false);
-            } else {
-                dataitem.setObligatory(true);
-            }
-        }
+        model = getHeaderModel(modelname);
+        structure.importModel(model);
+        prepareHeader(structure, modelname, usermodel, mode);
         
         model = getItensModel("itens");
         itens.setMark(true);
         itens.importModel(model);
+        prepareItens(itens, mode, usermodel);
         
-        if (mode.equals("update")) {
+        switch (mode) {
+        case UPDATE:
             title = "datadict.update";
             new Button(main, "save");
             new Button(main, "add");
             new Button(main, "deleteitem");
-            
-            insertitem(itens);
-        }
+            break;
         
-        if (mode.equals("show"))
+        case SHOW:
             title = "datadict.view";
+            break;
         
-        if (mode.equals("create")) {
+        case CREATE:
             title = "datadict.create";
             new Button(main, "save");
             new Button(main, "add");
             new Button(main, "deleteitem");
+            break;
             
-            insertitem(itens);
+        default:
+            title = null;
         }
         
         vdata.setFocus("modeltext");
@@ -398,7 +535,7 @@ public class Main extends AbstractPage {
         String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
         
         cdata.setReloadableView(true);
-        cdata.addParameter("mode", "update");
+        cdata.addParameter("mode", UPDATE);
         cdata.addParameter("modelname", modelname);
         cdata.redirect(null, "structure");
     }
