@@ -11,7 +11,6 @@ import org.iocaste.shell.common.Button;
 import org.iocaste.shell.common.CheckBox;
 import org.iocaste.shell.common.Const;
 import org.iocaste.shell.common.Container;
-import org.iocaste.shell.common.ControlData;
 import org.iocaste.shell.common.DataForm;
 import org.iocaste.shell.common.DataItem;
 import org.iocaste.shell.common.Element;
@@ -47,10 +46,9 @@ public class Main extends AbstractPage {
     
     /**
      * 
-     * @param cdata
      * @param vdata
      */
-    public final void add(ControlData cdata, byte mode, ViewData vdata) {
+    public final void add(byte mode, ViewData vdata) {
         Table itens = (Table)vdata.getElement("itens");
         
         insertItem(itens, mode, null);
@@ -58,24 +56,22 @@ public class Main extends AbstractPage {
     
     /**
      * 
-     * @param cdata
      * @param vdata
      * @throws Exception
      */
-    public final void create(ControlData cdata, ViewData vdata)
-            throws Exception {
+    public final void create(ViewData vdata) throws Exception {
         Documents documents = new Documents(this);
         String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
         
         if (documents.hasModel(modelname)) {
-            cdata.message(Const.ERROR, "model.already.exist");
+            vdata.message(Const.ERROR, "model.already.exist");
             return;
         }
-            
-        cdata.setReloadableView(true);
-        cdata.addParameter("mode", CREATE);
-        cdata.addParameter("modelname", modelname);
-        cdata.redirect(null, "structure");
+        
+        vdata.setReloadableView(true);
+        vdata.export("mode", CREATE);
+        vdata.export("modelname", modelname);
+        vdata.redirect(null, "structure");
     }
     
     /**
@@ -84,20 +80,19 @@ public class Main extends AbstractPage {
      * @param vdata
      * @throws Exception
      */
-    public final void delete(ControlData cdata, ViewData vdata)
-            throws Exception {
+    public final void delete(ViewData vdata) throws Exception {
         Documents documents = new Documents(this);
         String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
         
         if (!documents.hasModel(modelname)) {
-            cdata.message(Const.ERROR, "model.not.found");
+            vdata.message(Const.ERROR, "model.not.found");
             return;
         }
         
         documents.removeModel(modelname);
         documents.commit();
         
-        cdata.message(Const.STATUS, "model.removed.sucessfully");
+        vdata.message(Const.STATUS, "model.removed.sucessfully");
     }
     
     /**
@@ -105,7 +100,7 @@ public class Main extends AbstractPage {
      * @param cdata
      * @param vdata
      */
-    public final void deleteitem(ControlData cdata, ViewData vdata) {
+    public final void deleteitem(ViewData vdata) {
         Table itens = (Table)vdata.getElement("itens");
         TableItem[] marked = itens.getSelected();
         
@@ -385,7 +380,7 @@ public class Main extends AbstractPage {
      * @param vdata
      * @throws Exception
      */
-    public final void save(ControlData cdata, ViewData vdata) throws Exception {
+    public final void save(ViewData vdata) throws Exception {
         TableItem item;
         DocumentModelItem modelitem;
         DocumentModelKey modelkey;
@@ -442,8 +437,8 @@ public class Main extends AbstractPage {
         documents.createModel(model);
         documents.commit();
         
-        cdata.message(Const.STATUS, "table.saved.successfully");
-        back(cdata, vdata);
+        vdata.message(Const.STATUS, "table.saved.successfully");
+        back(vdata);
     }
     
     /**
@@ -452,22 +447,22 @@ public class Main extends AbstractPage {
      * @param vdata
      * @throws Exception 
      */
-    public final void show(ControlData cdata, ViewData vdata) throws Exception {
+    public final void show(ViewData vdata) throws Exception {
         DocumentModel model;
         String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
         Documents documents = new Documents(this);
         
         if (!documents.hasModel(modelname)) {
-            cdata.message(Const.ERROR, "model.doesnt.exists");
+            vdata.message(Const.ERROR, "model.doesnt.exists");
             return;
         }
         
         model = documents.getModel(modelname);
         
-        cdata.setReloadableView(true);
-        cdata.addParameter("mode", SHOW);
-        cdata.addParameter("model", model);
-        cdata.redirect(null, "structure");
+        vdata.setReloadableView(true);
+        vdata.export("mode", SHOW);
+        vdata.export("model", model);
+        vdata.redirect(null, "structure");
     }
     
     /**
@@ -531,12 +526,12 @@ public class Main extends AbstractPage {
      * @param cdata
      * @param vdata
      */
-    public final void update(ControlData cdata, ViewData vdata) {
+    public final void update(ViewData vdata) {
         String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
         
-        cdata.setReloadableView(true);
-        cdata.addParameter("mode", UPDATE);
-        cdata.addParameter("modelname", modelname);
-        cdata.redirect(null, "structure");
+        vdata.setReloadableView(true);
+        vdata.addParameter("mode", UPDATE);
+        vdata.addParameter("modelname", modelname);
+        vdata.redirect(null, "structure");
     }
 }
