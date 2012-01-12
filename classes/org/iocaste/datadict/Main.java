@@ -476,7 +476,7 @@ public class Main extends AbstractPage {
         byte mode = (Byte)vdata.getParameter("mode");
         Container main = new Form(null, "datadict.structure");
         DataForm structure = new DataForm(main, "structure.form");
-        Table itens = new Table(main, 0, "itens");
+        Table itens = new Table(main, "itens");
         
         if (mode == CREATE)
             modelname = ((String)vdata.getParameter("modelname"));
