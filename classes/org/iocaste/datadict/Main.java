@@ -15,11 +15,12 @@ import org.iocaste.shell.common.DataForm;
 import org.iocaste.shell.common.DataItem;
 import org.iocaste.shell.common.Element;
 import org.iocaste.shell.common.Form;
+import org.iocaste.shell.common.InputComponent;
 import org.iocaste.shell.common.ListBox;
 import org.iocaste.shell.common.SearchHelp;
+import org.iocaste.shell.common.Shell;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableItem;
-import org.iocaste.shell.common.TextField;
 import org.iocaste.shell.common.ViewData;
 
 public class Main extends AbstractPage {
@@ -71,12 +72,12 @@ public class Main extends AbstractPage {
         vdata.setReloadableView(true);
         vdata.export("mode", CREATE);
         vdata.export("modelname", modelname);
+        vdata.export("model", null);
         vdata.redirect(null, "structure");
     }
     
     /**
      * 
-     * @param cdata
      * @param vdata
      * @throws Exception
      */
@@ -97,15 +98,14 @@ public class Main extends AbstractPage {
     
     /**
      * 
-     * @param cdata
      * @param vdata
      */
     public final void deleteitem(ViewData vdata) {
         Table itens = (Table)vdata.getElement("itens");
-        TableItem[] marked = itens.getSelected();
         
-        for (TableItem item : marked)
-            itens.remove(item);
+        for (TableItem item : itens.getItens())
+            if (item.isSelected())
+                itens.remove(item);
     }
     
     /**
@@ -183,93 +183,95 @@ public class Main extends AbstractPage {
     
     /**
      * 
+     * @param vdata
+     * @return
+     */
+    private final String getModelName(ViewData vdata) {
+        byte mode = (Byte)vdata.getParameter("mode");
+        DocumentModel model = (DocumentModel)vdata.getParameter("model");
+        
+        if (mode == CREATE)
+            return ((String)vdata.getParameter("modelname"));
+        else
+            return model.getName();
+    }
+    
+    /**
+     * 
+     * @param item
+     * @param name
+     * @return
+     */
+    private final String getTableValue(TableItem item, String name) {
+        InputComponent input = (InputComponent)item.get("item.name");
+        
+        return input.getValue();
+    }
+    
+    /**
+     * 
      * @param itens
      * @param mode
      * @param modelitem
      */
-    private final void insertItem(Table itens, byte mode, DocumentModelItem modelitem) {
+    private final void insertItem(Table itens, byte mode,
+            DocumentModelItem modelitem) {
         ListBox list;
-        CheckBox checkbox;
-        TextField tfield;
         DocumentModel model;
+        String value;
         DataElement dataelement = (modelitem == null)?
                 null : modelitem.getDataElement();
         TableItem item = new TableItem(itens);
         
         for (String name: ITEM_NAMES) {
             if (name.equals("item.tablefield")) {
-                item.add(Const.TEXT_FIELD, name, null);
-                
-                if (dataelement == null)
-                    continue;
-                
-                tfield = (TextField)item.getElement(name);
-                tfield.setValue(modelitem.getTableFieldName());
-                tfield.setEnabled((mode == SHOW)?false:true);
+                value = (modelitem == null)?null:modelitem.getTableFieldName();
+                newField(Const.TEXT_FIELD, mode, item, name, value);
                 
                 continue;
             }
             
             if (name.equals("item.classfield")) {
-                item.add(Const.TEXT_FIELD, name, null);
-                
-                if (dataelement == null)
-                    continue;
-                
-                tfield = (TextField)item.getElement(name);
-                tfield.setValue(modelitem.getAttributeName());
-                tfield.setEnabled((mode == SHOW)?false:true);
+                value = (modelitem == null)?null:modelitem.getAttributeName();
+                newField(Const.TEXT_FIELD, mode, item, name, value);
                 
                 continue;
             }
             
             if (name.equals("item.name")) {
-                item.add(Const.TEXT_FIELD, name, null);
-                
-                if (dataelement == null)
-                    continue;
-                
-                tfield = (TextField)item.getElement(name);
-                tfield.setValue(modelitem.getName());
-                tfield.setEnabled((mode == SHOW)?false:true);
+                value = (modelitem == null)?null:modelitem.getName();
+                newField(Const.TEXT_FIELD, mode, item, name, value);
                 
                 continue;
             }
             
             if (name.equals("item.length")) {
-                item.add(Const.TEXT_FIELD, name, null);
-                
-                if (dataelement == null)
-                    continue;
-                
-                tfield = (TextField)item.getElement(name);
-                tfield.setValue(Integer.toString(dataelement.getLength()));
-                tfield.setEnabled((mode == SHOW)?false:true);
+                value = (modelitem == null)?null:Integer.toString(
+                        dataelement.getLength());
+                newField(Const.TEXT_FIELD, mode, item, name, value);
                 
                 continue;
             }
             
             if (name.equals("item.key")) {
-                item.add(Const.CHECKBOX, name, null);
+                if (modelitem != null) {
+                    model = modelitem.getDocumentModel();
+                    value =  model.isKey(modelitem)? "on" : "off";
+                } else {
+                    value = "off";
+                }
                 
-                if (dataelement == null)
-                    continue;
-                
-                model = modelitem.getDocumentModel();
-                checkbox = (CheckBox)item.getElement(name);
-                checkbox.setValue(model.isKey(modelitem)? "on" : "off");
-                checkbox.setEnabled((mode == SHOW)?false:true);
+                newField(Const.CHECKBOX, mode, item, name, value);
                 
                 continue;
             }
         
             if (name.equals("item.type")) {
-                item.add(Const.LIST_BOX, name, null);
+                list = (ListBox)newField(Const.LIST_BOX, mode, item, name,
+                        null);
                 
-                list = (ListBox)item.getElement(name);
                 list.add("char", Integer.toString(DataType.CHAR));
                 list.add("numc", Integer.toString(DataType.NUMC));
-                list.setEnabled((mode == SHOW)?false:true);
                 
                 continue;
             }
@@ -312,6 +314,17 @@ public class Main extends AbstractPage {
         view.addContainer(main);
     }
     
+    private final Element newField(Const type, int mode, TableItem item,
+            String name, String value) {
+        Element element = Shell.factory(item.getTable(), type, name, null);
+        InputComponent input = (InputComponent)element;
+        
+        item.add(element);
+        input.setValue(value);
+        element.setEnabled((mode == SHOW)?false:true);
+        
+        return element;
+    }
     /**
      * 
      * @param form
@@ -376,12 +389,10 @@ public class Main extends AbstractPage {
     
     /**
      * 
-     * @param cdata
      * @param vdata
      * @throws Exception
      */
     public final void save(ViewData vdata) throws Exception {
-        TableItem item;
         DocumentModelItem modelitem;
         DocumentModelKey modelkey;
         DataElement dataelement;
@@ -397,33 +408,28 @@ public class Main extends AbstractPage {
         model.setClassName(structure.getValue("modelclass"));
         model.setTableName(structure.getValue("modeltable"));
         
-        for (Element element : itens.getElements()) {
-            if (element.getType() != Const.TABLE_ITEM)
-                continue;
-            
-            item = (TableItem)element;
-            itemname = itens.getValue(item, "item.name");
+        for (TableItem item : itens.getItens()) {
+            itemname = getTableValue(item, "item.name");
             
             dataelement = new DataElement();
             dataelement.setName(new StringBuilder(model.getName()).append(".").
                     append(itemname).toString());
-            dataelement.setLength(Integer.parseInt(
-                    itens.getValue(item, "item.length")));
-            dataelement.setType(Integer.parseInt(
-                    itens.getValue(item, "item.type")));
+            dataelement.setLength(Integer.parseInt(getTableValue(
+                    item, "item.length")));
+            dataelement.setType(Integer.parseInt(getTableValue(
+                    item, "item.type")));
              
             modelitem = new DocumentModelItem();
             modelitem.setIndex(i++);
             modelitem.setName(itemname);
-            modelitem.setTableFieldName(itens.getValue(item,
-                    "item.tablefield"));
-            modelitem.setAttributeName(itens.getValue(item, "item.classfield"));
+            modelitem.setTableFieldName(getTableValue(item, "item.tablefield"));
+            modelitem.setAttributeName(getTableValue(item, "item.classfield"));
             modelitem.setDataElement(dataelement);
             modelitem.setDocumentModel(model);
             
             model.add(modelitem);
             
-            key = (CheckBox)itens.getElement(item.getComplexName("item.key"));
+            key = (CheckBox)item.get("item.key");
             if (!key.isSelected())
                 continue;
         
@@ -443,7 +449,6 @@ public class Main extends AbstractPage {
     
     /**
      * 
-     * @param cdata
      * @param vdata
      * @throws Exception 
      */
@@ -478,11 +483,7 @@ public class Main extends AbstractPage {
         DataForm structure = new DataForm(main, "structure.form");
         Table itens = new Table(main, "itens");
         
-        if (mode == CREATE)
-            modelname = ((String)vdata.getParameter("modelname"));
-        else
-            modelname = usermodel.getName();
-        
+        modelname = getModelName(vdata);
         model = getHeaderModel(modelname);
         structure.importModel(model);
         prepareHeader(structure, modelname, usermodel, mode);
@@ -494,18 +495,18 @@ public class Main extends AbstractPage {
         
         switch (mode) {
         case UPDATE:
-            title = "datadict.update";
+            title = "datadict-update";
             new Button(main, "save");
             new Button(main, "add");
             new Button(main, "deleteitem");
             break;
         
         case SHOW:
-            title = "datadict.view";
+            title = "datadict-view";
             break;
         
         case CREATE:
-            title = "datadict.create";
+            title = "datadict-create";
             new Button(main, "save");
             new Button(main, "add");
             new Button(main, "deleteitem");
@@ -523,7 +524,24 @@ public class Main extends AbstractPage {
     
     /**
      * 
-     * @param cdata
+     * @param vdata
+     */
+    public final void transport(ViewData vdata) throws Exception {
+//        String transportdir = getRealPath("../../../transport");
+//        File file = new File(transportdir+"/ot0001.txt");
+//        FileWriter fwriter = new FileWriter(file);
+//        BufferedWriter bwriter = new BufferedWriter(fwriter);
+//        
+//        bwriter.write("IOCST_OT");
+//        bwriter.newLine();
+//        bwriter.flush();
+//        bwriter.close();
+//        
+//        vdata.message(Const.STATUS, "object.transport.successful");
+    }
+    
+    /**
+     * 
      * @param vdata
      */
     public final void update(ViewData vdata) {
