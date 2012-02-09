@@ -315,7 +315,7 @@ public class Main extends AbstractPage {
         
         view.setFocus("modelname");
         view.setNavbarActionEnabled("back", true);
-        view.setTitle("datadict.utilities");
+        view.setTitle("datadict-selection");
         view.addContainer(main);
     }
     
@@ -458,7 +458,6 @@ public class Main extends AbstractPage {
         documents.commit();
         
         vdata.message(Const.STATUS, "table.saved.successfully");
-        back(vdata);
     }
     
     /**
