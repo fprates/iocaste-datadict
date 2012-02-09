@@ -49,7 +49,8 @@ public class Main extends AbstractPage {
      * 
      * @param vdata
      */
-    public final void add(byte mode, ViewData vdata) {
+    public final void add(ViewData vdata) {
+        byte mode = getMode(vdata);
         Table itens = (Table)vdata.getElement("itens");
         
         insertItem(itens, mode, null);
@@ -181,13 +182,17 @@ public class Main extends AbstractPage {
         return model;
     }
     
+    private final byte getMode(ViewData vdata) {
+        return (Byte)vdata.getParameter("mode");
+    }
+    
     /**
      * 
      * @param vdata
      * @return
      */
     private final String getModelName(ViewData vdata) {
-        byte mode = (Byte)vdata.getParameter("mode");
+        byte mode = getMode(vdata);
         DocumentModel model = (DocumentModel)vdata.getParameter("model");
         
         if (mode == CREATE)
@@ -203,7 +208,7 @@ public class Main extends AbstractPage {
      * @return
      */
     private final String getTableValue(TableItem item, String name) {
-        InputComponent input = (InputComponent)item.get("item.name");
+        InputComponent input = (InputComponent)item.get(name);
         
         return input.getValue();
     }
@@ -305,7 +310,7 @@ public class Main extends AbstractPage {
         
         modelform.addAction("create");
         modelform.addAction("show");
-//        modelform.addAction("update");
+        modelform.addAction("update");
         modelform.addAction("delete");
         
         view.setFocus("modelname");
@@ -402,6 +407,7 @@ public class Main extends AbstractPage {
         DataForm structure = (DataForm)vdata.getElement("structure.form");
         Table itens = (Table)vdata.getElement("itens");
         DocumentModel model = new DocumentModel();
+        byte mode = getMode(vdata);
         int i = 0;
         
         model.setName(structure.getValue("modelname"));
@@ -440,7 +446,15 @@ public class Main extends AbstractPage {
             model.addKey(modelkey);
         }
         
-        documents.createModel(model);
+        switch (mode) {
+        case UPDATE:
+            documents.updateModel(model);
+            break;
+        case CREATE:
+            documents.createModel(model);
+            break;
+        }
+        
         documents.commit();
         
         vdata.message(Const.STATUS, "table.saved.successfully");
@@ -478,7 +492,7 @@ public class Main extends AbstractPage {
         String title, modelname;
         DocumentModel model, usermodel =
                 (DocumentModel)vdata.getParameter("model");
-        byte mode = (Byte)vdata.getParameter("mode");
+        byte mode = getMode(vdata);
         Container main = new Form(null, "datadict.structure");
         DataForm structure = new DataForm(main, "structure.form");
         Table itens = new Table(main, "itens");
@@ -543,13 +557,23 @@ public class Main extends AbstractPage {
     /**
      * 
      * @param vdata
+     * @throws Exception
      */
-    public final void update(ViewData vdata) {
+    public final void update(ViewData vdata) throws Exception {
+        DocumentModel model;
         String modelname = ((DataItem)vdata.getElement("modelname")).getValue();
+        Documents documents = new Documents(this);
+        
+        if (!documents.hasModel(modelname)) {
+            vdata.message(Const.ERROR, "model.doesnt.exists");
+            return;
+        }
+        
+        model = documents.getModel(modelname);
         
         vdata.setReloadableView(true);
-        vdata.addParameter("mode", UPDATE);
-        vdata.addParameter("modelname", modelname);
+        vdata.export("mode", UPDATE);
+        vdata.export("model", model);
         vdata.redirect(null, "structure");
     }
 }
