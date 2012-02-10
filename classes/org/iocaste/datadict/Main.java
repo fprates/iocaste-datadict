@@ -298,8 +298,10 @@ public class Main extends AbstractPage {
             }
         
             if (name.equals("item.type")) {
+                value = (modelitem == null)?null:Integer.toString(
+                        dataelement.getType());
                 list = (ListBox)newField(Const.LIST_BOX, mode, item, name,
-                        null, null);
+                        value, null);
                 
                 list.add("char", Integer.toString(DataType.CHAR));
                 list.add("numc", Integer.toString(DataType.NUMC));
