@@ -21,6 +21,7 @@ import org.iocaste.shell.common.SearchHelp;
 import org.iocaste.shell.common.Shell;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableItem;
+import org.iocaste.shell.common.Text;
 import org.iocaste.shell.common.ViewData;
 import org.iocaste.transport.common.Order;
 import org.iocaste.transport.common.Transport;
@@ -302,11 +303,16 @@ public class Main extends AbstractPage {
             if (name.equals("item.type")) {
                 value = (modelitem == null)?null:Integer.toString(
                         dataelement.getType());
-                list = (ListBox)newField(Const.LIST_BOX, mode, item, name,
-                        value, null);
                 
-                list.add("char", Integer.toString(DataType.CHAR));
-                list.add("numc", Integer.toString(DataType.NUMC));
+                if (mode == SHOW) {
+                    newField(Const.TEXT, mode, item, name, value, null);
+                } else {
+                    list = (ListBox)newField(Const.LIST_BOX, mode, item, name,
+                            value, null);
+                    
+                    list.add("char", Integer.toString(DataType.CHAR));
+                    list.add("numc", Integer.toString(DataType.NUMC));
+                }
                 
                 continue;
             }
@@ -351,14 +357,22 @@ public class Main extends AbstractPage {
     
     private final Element newField(Const type, int mode, TableItem item,
             String name, String value, DataElement reference) {
-        Element element = Shell.factory(item.getTable(), type, name, null);
-        InputComponent input = (InputComponent)element;
+        Element element;
+        InputComponent input;
+        Table table = item.getTable();
+        
+        if (mode == SHOW) {
+            element = Shell.factory(table, Const.TEXT, name, null);
+            ((Text)element).setText(value);
+        } else {
+            element = Shell.factory(table, type, name, null);
+            
+            input = (InputComponent)element;
+            input.setValue(value);
+            input.setDataElement(reference);
+        }
         
         item.add(element);
-        input.setValue(value);
-        input.setDataElement(reference);
-        
-        element.setEnabled((mode == SHOW)?false:true);
         
         return element;
     }
@@ -506,7 +520,7 @@ public class Main extends AbstractPage {
         Documents documents = new Documents(this);
         
         if (!documents.hasModel(modelname)) {
-            vdata.message(Const.ERROR, "model.doesnt.exists");
+            vdata.message(Const.ERROR, "model.not.found");
             return;
         }
         
@@ -543,6 +557,7 @@ public class Main extends AbstractPage {
         
         switch (mode) {
         case UPDATE:
+            itens.setMark(true);
             title = "datadict-update";
             new Button(main, "save");
             new Button(main, "add");
@@ -550,10 +565,12 @@ public class Main extends AbstractPage {
             break;
         
         case SHOW:
+            itens.setMark(false);
             title = "datadict-view";
             break;
         
         case CREATE:
+            itens.setMark(true);
             title = "datadict-create";
             new Button(main, "save");
             new Button(main, "add");
@@ -594,7 +611,7 @@ public class Main extends AbstractPage {
         Documents documents = new Documents(this);
         
         if (!documents.hasModel(modelname)) {
-            vdata.message(Const.ERROR, "model.doesnt.exists");
+            vdata.message(Const.ERROR, "model.not.found");
             return;
         }
         
