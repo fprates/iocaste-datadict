@@ -28,6 +28,11 @@ public class Main extends AbstractPage {
     private static final byte SHOW = 1;
     private static final byte UPDATE = 2;
     
+    private static final byte TABLE_FIELD = 0;
+    private static final byte CLASS_FIELD = 1;
+    private static final byte NAME = 2;
+    private static final byte LENGTH = 3;
+    
     private static final String[] HEADER_NAMES = {
         "modelname",
         "modeltext",
@@ -49,11 +54,12 @@ public class Main extends AbstractPage {
      * 
      * @param vdata
      */
-    public final void add(ViewData vdata) {
+    public final void add(ViewData vdata) throws Exception {
         byte mode = getMode(vdata);
         Table itens = (Table)vdata.getElement("itens");
+        DataElement[] references = getFieldReferences();
         
-        insertItem(itens, mode, null);
+        insertItem(itens, mode, null, references);
     }
     
     /**
@@ -107,6 +113,22 @@ public class Main extends AbstractPage {
         for (TableItem item : itens.getItens())
             if (item.isSelected())
                 itens.remove(item);
+    }
+    
+    /**
+     * 
+     * @return
+     */
+    private final DataElement[] getFieldReferences() throws Exception {
+        DataElement[] references = new DataElement[4];
+        Documents docs = new Documents(this);
+        
+        references[TABLE_FIELD] = docs.getDataElement("MODELITEM.FIELDNAME");
+        references[CLASS_FIELD] = docs.getDataElement("MODELITEM.ATTRIB");
+        references[NAME] = docs.getDataElement("DATAELEMENT.NAME");
+        references[LENGTH] = docs.getDataElement("DATAELEMENT.LENGTH");
+        
+        return references;
     }
     
     /**
@@ -220,7 +242,7 @@ public class Main extends AbstractPage {
      * @param modelitem
      */
     private final void insertItem(Table itens, byte mode,
-            DocumentModelItem modelitem) {
+            DocumentModelItem modelitem, DataElement[] references) {
         ListBox list;
         DocumentModel model;
         String value;
@@ -231,21 +253,24 @@ public class Main extends AbstractPage {
         for (String name: ITEM_NAMES) {
             if (name.equals("item.tablefield")) {
                 value = (modelitem == null)?null:modelitem.getTableFieldName();
-                newField(Const.TEXT_FIELD, mode, item, name, value);
+                newField(Const.TEXT_FIELD, mode, item, name, value,
+                        references[TABLE_FIELD]);
                 
                 continue;
             }
             
             if (name.equals("item.classfield")) {
                 value = (modelitem == null)?null:modelitem.getAttributeName();
-                newField(Const.TEXT_FIELD, mode, item, name, value);
+                newField(Const.TEXT_FIELD, mode, item, name, value,
+                        references[CLASS_FIELD]);
                 
                 continue;
             }
             
             if (name.equals("item.name")) {
                 value = (modelitem == null)?null:modelitem.getName();
-                newField(Const.TEXT_FIELD, mode, item, name, value);
+                newField(Const.TEXT_FIELD, mode, item, name, value,
+                        references[NAME]);
                 
                 continue;
             }
@@ -253,7 +278,8 @@ public class Main extends AbstractPage {
             if (name.equals("item.length")) {
                 value = (modelitem == null)?null:Integer.toString(
                         dataelement.getLength());
-                newField(Const.TEXT_FIELD, mode, item, name, value);
+                newField(Const.TEXT_FIELD, mode, item, name, value,
+                        references[LENGTH]);
                 
                 continue;
             }
@@ -266,14 +292,14 @@ public class Main extends AbstractPage {
                     value = "off";
                 }
                 
-                newField(Const.CHECKBOX, mode, item, name, value);
+                newField(Const.CHECKBOX, mode, item, name, value, null);
                 
                 continue;
             }
         
             if (name.equals("item.type")) {
                 list = (ListBox)newField(Const.LIST_BOX, mode, item, name,
-                        null);
+                        null, null);
                 
                 list.add("char", Integer.toString(DataType.CHAR));
                 list.add("numc", Integer.toString(DataType.NUMC));
@@ -320,12 +346,14 @@ public class Main extends AbstractPage {
     }
     
     private final Element newField(Const type, int mode, TableItem item,
-            String name, String value) {
+            String name, String value, DataElement reference) {
         Element element = Shell.factory(item.getTable(), type, name, null);
         InputComponent input = (InputComponent)element;
         
         item.add(element);
         input.setValue(value);
+        input.setDataElement(reference);
+        
         element.setEnabled((mode == SHOW)?false:true);
         
         return element;
@@ -384,12 +412,15 @@ public class Main extends AbstractPage {
      * 
      * @param itens
      */
-    private final void prepareItens(Table itens, byte mode, DocumentModel model) {
+    private final void prepareItens(Table itens, byte mode,
+            DocumentModel model) throws Exception {
+        DataElement[] references = getFieldReferences();
+        
         if (model == null)
-            insertItem(itens, mode, null);
+            insertItem(itens, mode, null, references);
         else
             for (DocumentModelItem modelitem : model.getItens())
-                insertItem(itens, mode, modelitem);
+                insertItem(itens, mode, modelitem, references);
     }
     
     /**
@@ -487,7 +518,7 @@ public class Main extends AbstractPage {
      * 
      * @param vdata
      */
-    public final void structure(ViewData vdata) {
+    public final void structure(ViewData vdata) throws Exception {
         String title, modelname;
         DocumentModel model, usermodel =
                 (DocumentModel)vdata.getParameter("model");
