@@ -22,6 +22,8 @@ import org.iocaste.shell.common.Shell;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableItem;
 import org.iocaste.shell.common.ViewData;
+import org.iocaste.transport.common.Order;
+import org.iocaste.transport.common.Transport;
 
 public class Main extends AbstractPage {
     private static final byte CREATE = 0;
@@ -573,17 +575,12 @@ public class Main extends AbstractPage {
      * @param vdata
      */
     public final void transport(ViewData vdata) throws Exception {
-//        String transportdir = getRealPath("../../../transport");
-//        File file = new File(transportdir+"/ot0001.txt");
-//        FileWriter fwriter = new FileWriter(file);
-//        BufferedWriter bwriter = new BufferedWriter(fwriter);
-//        
-//        bwriter.write("IOCST_OT");
-//        bwriter.newLine();
-//        bwriter.flush();
-//        bwriter.close();
-//        
-//        vdata.message(Const.STATUS, "object.transport.successful");
+        Transport transport = new Transport(this);
+        Order order = new Order();
+        
+        transport.save(order);
+      
+        vdata.message(Const.STATUS, "object.transport.successful");
     }
     
     /**
