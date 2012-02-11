@@ -40,6 +40,9 @@ public class Main extends AbstractPage {
     private static final byte NAME = 2;
     private static final byte LENGTH = 3;
     
+    private static final boolean OBLIGATORY = true;
+    private static final boolean NON_OBLIGATORY = false;
+    
     private static final String[] ITEM_NAMES = {
         "item.name",
         "item.tablefield",
@@ -220,7 +223,7 @@ public class Main extends AbstractPage {
             if (name.equals("item.tablefield")) {
                 value = (modelitem == null)?null:modelitem.getTableFieldName();
                 newField(Const.TEXT_FIELD, mode, item, name, value,
-                        references[TABLE_FIELD]);
+                        references[TABLE_FIELD], OBLIGATORY);
                 
                 continue;
             }
@@ -228,7 +231,7 @@ public class Main extends AbstractPage {
             if (name.equals("item.classfield")) {
                 value = (modelitem == null)?null:modelitem.getAttributeName();
                 newField(Const.TEXT_FIELD, mode, item, name, value,
-                        references[CLASS_FIELD]);
+                        references[CLASS_FIELD], OBLIGATORY);
                 
                 continue;
             }
@@ -236,7 +239,7 @@ public class Main extends AbstractPage {
             if (name.equals("item.name")) {
                 value = (modelitem == null)?null:modelitem.getName();
                 newField(Const.TEXT_FIELD, mode, item, name, value,
-                        references[NAME]);
+                        references[NAME], OBLIGATORY);
                 
                 continue;
             }
@@ -245,7 +248,7 @@ public class Main extends AbstractPage {
                 value = (modelitem == null)?null:Integer.toString(
                         dataelement.getLength());
                 newField(Const.TEXT_FIELD, mode, item, name, value,
-                        references[LENGTH]);
+                        references[LENGTH], OBLIGATORY);
                 
                 continue;
             }
@@ -261,7 +264,8 @@ public class Main extends AbstractPage {
                     value = (mode == SHOW)?"no" : "off";
                 }
                 
-                newField(Const.CHECKBOX, mode, item, name, value, null);
+                newField(Const.CHECKBOX, mode, item, name, value, null,
+                        NON_OBLIGATORY);
                 
                 continue;
             }
@@ -281,12 +285,13 @@ public class Main extends AbstractPage {
                         break;
                     }
                     
-                    newField(Const.TEXT, mode, item, name, value, null);
+                    newField(Const.TEXT, mode, item, name, value, null,
+                            NON_OBLIGATORY);
                 } else {
                     value = (modelitem == null)?null:Integer.toString(
                             dataelement.getType());
                     list = (ListBox)newField(Const.LIST_BOX, mode, item, name,
-                            value, null);
+                            value, null, OBLIGATORY);
                     
                     list.add("char", Integer.toString(DataType.CHAR));
                     list.add("numc", Integer.toString(DataType.NUMC));
@@ -334,7 +339,8 @@ public class Main extends AbstractPage {
     }
     
     private final Element newField(Const type, int mode, TableItem item,
-            String name, String value, DataElement reference) {
+            String name, String value, DataElement reference,
+            boolean obligatory) {
         Element element;
         InputComponent input;
         Table table = item.getTable();
@@ -348,6 +354,7 @@ public class Main extends AbstractPage {
             input = (InputComponent)element;
             input.setValue(value);
             input.setDataElement(reference);
+            input.setObligatory(obligatory);
         }
         
         item.add(element);
