@@ -1,5 +1,8 @@
 package org.iocaste.datadict;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.iocaste.documents.common.DataElement;
 import org.iocaste.documents.common.DataType;
 import org.iocaste.documents.common.DocumentModel;
@@ -20,6 +23,7 @@ import org.iocaste.shell.common.ListBox;
 import org.iocaste.shell.common.SearchHelp;
 import org.iocaste.shell.common.Shell;
 import org.iocaste.shell.common.Table;
+import org.iocaste.shell.common.TableColumn;
 import org.iocaste.shell.common.TableItem;
 import org.iocaste.shell.common.Text;
 import org.iocaste.shell.common.ViewData;
@@ -35,22 +39,32 @@ public class Main extends AbstractPage {
     private static final byte MODELCLASS = 1;
     private static final byte MODELTABLE = 2;
     
-    private static final byte TABLE_FIELD = 0;
-    private static final byte CLASS_FIELD = 1;
-    private static final byte NAME = 2;
-    private static final byte LENGTH = 3;
-    
     private static final boolean OBLIGATORY = true;
     private static final boolean NON_OBLIGATORY = false;
     
-    private static final String[] ITEM_NAMES = {
-        "item.name",
-        "item.tablefield",
-        "item.classfield",
-        "item.key", 
-        "item.type",
-        "item.length",
-        "item.text"
+    private enum ItensNames {
+        NAME("item.name", "DATAELEMENT.NAME"),
+        TABLE_FIELD("item.tablefield", "MODELITEM.FIELDNAME"),
+        CLASS_FIELD("item.classfield", "MODELITEM.ATTRIB"),
+        KEY("item.key", null), 
+        TYPE("item.type", null),
+        LENGTH("item.length", "DATAELEMENT.LENGTH"),
+        TEXT("item.text", null);
+        
+        private String name, de;
+        
+        ItensNames(String name, String de) {
+            this.name = name;
+            this.de = de;
+        }
+        
+        public final String getDataElement() {
+            return de;
+        }
+        
+        public final String getName() {
+            return name;
+        }
     };
     
     /**
@@ -60,7 +74,7 @@ public class Main extends AbstractPage {
     public final void add(ViewData vdata) throws Exception {
         byte mode = getMode(vdata);
         Table itens = (Table)vdata.getElement("itens");
-        DataElement[] references = getFieldReferences();
+        Map<ItensNames, DataElement> references = getFieldReferences();
         
         if (hasItemDuplicated(vdata))
             return;
@@ -125,55 +139,17 @@ public class Main extends AbstractPage {
      * 
      * @return
      */
-    private final DataElement[] getFieldReferences() throws Exception {
-        DataElement[] references = new DataElement[4];
+    private final Map<ItensNames, DataElement> getFieldReferences()
+            throws Exception {
+        Map<ItensNames, DataElement> references =
+                new HashMap<ItensNames, DataElement>();
         Documents docs = new Documents(this);
         
-        references[TABLE_FIELD] = docs.getDataElement("MODELITEM.FIELDNAME");
-        references[CLASS_FIELD] = docs.getDataElement("MODELITEM.ATTRIB");
-        references[NAME] = docs.getDataElement("DATAELEMENT.NAME");
-        references[LENGTH] = docs.getDataElement("DATAELEMENT.LENGTH");
+        for (ItensNames itemname : ItensNames.values())
+            references.put(itemname,
+                    docs.getDataElement(itemname.getDataElement()));
         
         return references;
-    }
-    
-    /**
-     * 
-     * @param modelname
-     * @return
-     */
-    private final DocumentModel getItensModel(String modelname) {
-        DataElement dataelement;
-        DocumentModelItem item;
-        DocumentModel model = new DocumentModel();
-        int i = 0;
-        
-        model.setName(modelname);
-        
-        for (String name : ITEM_NAMES) {
-            dataelement = new DataElement();
-            dataelement.setUpcase(true);
-            dataelement.setType(DataType.CHAR);
-            dataelement.setLength(20);
-            
-            if (name.equals("item.length")) {
-                dataelement.setType(DataType.NUMC);
-                dataelement.setLength(3);
-            }
-            
-            if (name.equals("item.classname"))
-                dataelement.setUpcase(false);
-            
-            item = new DocumentModelItem();
-            item.setName(name);
-            item.setDocumentModel(model);
-            item.setDataElement(dataelement);
-            item.setIndex(i++);
-            
-            model.add(item);
-        }
-        
-        return model;
     }
     
     /**
@@ -263,7 +239,8 @@ public class Main extends AbstractPage {
      * @param modelitem
      */
     private final void insertItem(Table itens, byte mode,
-            DocumentModelItem modelitem, DataElement[] references) {
+            DocumentModelItem modelitem,
+            Map<ItensNames, DataElement> references) {
         ListBox list;
         DocumentModel model;
         DataElement dataelement = (modelitem == null)?
@@ -273,13 +250,14 @@ public class Main extends AbstractPage {
         helper.item = new TableItem(itens);
         helper.mode = mode;
         
-        for (String name: ITEM_NAMES) {
-            if (name.equals("item.tablefield")) {
+        for (ItensNames itemname : ItensNames.values()) {
+            helper.name = itemname.getName();
+            helper.reference = references.get(itemname);
+            
+            if (helper.name.equals("item.tablefield")) {
                 helper.type = Const.TEXT_FIELD;
-                helper.name = name;
                 helper.value = (modelitem == null)?
                         null:modelitem.getTableFieldName();
-                helper.reference = references[TABLE_FIELD];
                 helper.obligatory = OBLIGATORY;
                 
                 newField(helper);
@@ -287,12 +265,10 @@ public class Main extends AbstractPage {
                 continue;
             }
             
-            if (name.equals("item.classfield")) {
+            if (helper.name.equals("item.classfield")) {
                 helper.type = Const.TEXT_FIELD;
-                helper.name = name;
                 helper.value = (modelitem == null)?
                         null:modelitem.getAttributeName();
-                helper.reference = references[CLASS_FIELD];
                 helper.obligatory = OBLIGATORY;
 
                 newField(helper);
@@ -300,11 +276,9 @@ public class Main extends AbstractPage {
                 continue;
             }
             
-            if (name.equals("item.name")) {
+            if (helper.name.equals("item.name")) {
                 helper.type = Const.TEXT_FIELD;
-                helper.name = name;
                 helper.value = (modelitem == null)?null:modelitem.getName();
-                helper.reference = references[NAME];
                 helper.obligatory = OBLIGATORY;
 
                 newField(helper);
@@ -312,12 +286,10 @@ public class Main extends AbstractPage {
                 continue;
             }
             
-            if (name.equals("item.length")) {
+            if (helper.name.equals("item.length")) {
                 helper.type = Const.TEXT_FIELD;
-                helper.name = name;
                 helper.value = (modelitem == null)?null:Integer.toString(
                         dataelement.getLength());
-                helper.reference = references[LENGTH];
                 helper.obligatory = OBLIGATORY;
 
                 newField(helper);
@@ -325,10 +297,8 @@ public class Main extends AbstractPage {
                 continue;
             }
             
-            if (name.equals("item.key")) {
+            if (helper.name.equals("item.key")) {
                 helper.type = Const.CHECKBOX;
-                helper.name = name;
-                helper.reference = null;
                 helper.obligatory = NON_OBLIGATORY;
                 
                 if (modelitem != null) {
@@ -336,18 +306,18 @@ public class Main extends AbstractPage {
                     if (mode == SHOW)
                         helper.value = model.isKey(modelitem)? "yes" : "no";
                     else
-                        helper.value =  model.isKey(modelitem)? "on" : "off";
+                        helper.value =  model.isKey(modelitem)? "no" : "off";
                 } else {
                     helper.value = (mode == SHOW)?"no" : "off";
                 }
                 
+                newField(helper);
+                
                 continue;
             }
         
-            if (name.equals("item.type")) {
-                helper.name = name;
+            if (helper.name.equals("item.type")) {
                 helper.obligatory = NON_OBLIGATORY;
-                helper.reference = null;
                 
                 if (mode == SHOW) {
                     helper.type = Const.TEXT;
@@ -509,7 +479,7 @@ public class Main extends AbstractPage {
      */
     private final void prepareItens(Table itens, byte mode,
             DocumentModel model) throws Exception {
-        DataElement[] references = getFieldReferences();
+        Map<ItensNames, DataElement> references = getFieldReferences();
         
         if (model == null)
             insertItem(itens, mode, null, references);
@@ -623,12 +593,13 @@ public class Main extends AbstractPage {
      */
     public final void structure(ViewData vdata) throws Exception {
         String title, modelname;
-        DocumentModel model, usermodel =
-                (DocumentModel)vdata.getParameter("model");
+        TableColumn column;
+        DocumentModel usermodel = (DocumentModel)vdata.getParameter("model");
         byte mode = getMode(vdata);
         Container main = new Form(null, "datadict.structure");
         DataForm structure = new DataForm(main, "structure.form");
         Table itens = new Table(main, "itens");
+        Map<ItensNames, DataElement> references = getFieldReferences();
         
         modelname = getModelName(vdata);
         new DataItem(structure, Const.TEXT_FIELD, "modelname");
@@ -638,9 +609,12 @@ public class Main extends AbstractPage {
         
         prepareHeader(structure, modelname, usermodel, mode);
         
-        model = getItensModel("itens");
+        for (ItensNames itemname : ItensNames.values()) {
+            column = new TableColumn(itens, itemname.getName());
+            column.setDataElement(references.get(itemname));
+        }
+        
         itens.setMark(true);
-        itens.importModel(model);
         prepareItens(itens, mode, usermodel);
         
         switch (mode) {
