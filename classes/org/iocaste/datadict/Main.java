@@ -62,6 +62,9 @@ public class Main extends AbstractPage {
         Table itens = (Table)vdata.getElement("itens");
         DataElement[] references = getFieldReferences();
         
+        if (hasItemDuplicated(vdata))
+            return;
+        
         insertItem(itens, mode, null, references);
     }
     
@@ -202,6 +205,50 @@ public class Main extends AbstractPage {
         InputComponent input = (InputComponent)item.get(name);
         
         return input.getValue();
+    }
+    
+    /**
+     * 
+     * @param vdata
+     * @return
+     */
+    private final boolean hasItemDuplicated(ViewData vdata) {
+        String name, classfield, tablefield;
+        String testname, testclassfield, testtablefield;
+        Table itens = (Table)vdata.getElement("itens");
+        
+        for (TableItem item : itens.getItens()) {
+            name = getTableValue(item, "item.name");
+            classfield = getTableValue(item, "item.classfield");
+            tablefield = getTableValue(item, "item.tablefield");
+            
+            for (TableItem test : itens.getItens()) {
+                if (item == test)
+                    continue;
+                
+                testname = getTableValue(test, "item.name");
+                testclassfield = getTableValue(test, "item.classfield");
+                testtablefield = getTableValue(test, "item.tablefield");
+                
+                if (name.equals(testname)) {
+                    vdata.message(Const.ERROR, "item.name.duplicated");
+                    return true;
+                }
+
+                if (classfield.equals(testclassfield)) {
+                    vdata.message(Const.ERROR, "item.classfield.duplicated");
+                    return true;
+                }
+                
+                if (tablefield.equals(testtablefield)) {
+                    vdata.message(Const.ERROR, "item.tablefield.duplicated");
+                    return true;
+                }
+                    
+            }
+        }
+        
+        return false;
     }
     
     /**
@@ -453,6 +500,9 @@ public class Main extends AbstractPage {
         DocumentModel model = new DocumentModel();
         byte mode = getMode(vdata);
         int i = 0;
+        
+        if (hasItemDuplicated(vdata))
+            return;
         
         model.setName(structure.getValue("modelname"));
         model.setClassName(structure.getValue("modelclass"));
