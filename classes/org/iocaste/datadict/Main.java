@@ -176,6 +176,11 @@ public class Main extends AbstractPage {
         return model;
     }
     
+    /**
+     * 
+     * @param vdata
+     * @return
+     */
     private final byte getMode(ViewData vdata) {
         return (Byte)vdata.getParameter("mode");
     }
@@ -261,85 +266,112 @@ public class Main extends AbstractPage {
             DocumentModelItem modelitem, DataElement[] references) {
         ListBox list;
         DocumentModel model;
-        String value;
         DataElement dataelement = (modelitem == null)?
                 null : modelitem.getDataElement();
-        TableItem item = new TableItem(itens);
+        FieldHelper helper = new FieldHelper();
+        
+        helper.item = new TableItem(itens);
+        helper.mode = mode;
         
         for (String name: ITEM_NAMES) {
             if (name.equals("item.tablefield")) {
-                value = (modelitem == null)?null:modelitem.getTableFieldName();
-                newField(Const.TEXT_FIELD, mode, item, name, value,
-                        references[TABLE_FIELD], OBLIGATORY);
+                helper.type = Const.TEXT_FIELD;
+                helper.name = name;
+                helper.value = (modelitem == null)?
+                        null:modelitem.getTableFieldName();
+                helper.reference = references[TABLE_FIELD];
+                helper.obligatory = OBLIGATORY;
+                
+                newField(helper);
                 
                 continue;
             }
             
             if (name.equals("item.classfield")) {
-                value = (modelitem == null)?null:modelitem.getAttributeName();
-                newField(Const.TEXT_FIELD, mode, item, name, value,
-                        references[CLASS_FIELD], OBLIGATORY);
+                helper.type = Const.TEXT_FIELD;
+                helper.name = name;
+                helper.value = (modelitem == null)?
+                        null:modelitem.getAttributeName();
+                helper.reference = references[CLASS_FIELD];
+                helper.obligatory = OBLIGATORY;
+
+                newField(helper);
                 
                 continue;
             }
             
             if (name.equals("item.name")) {
-                value = (modelitem == null)?null:modelitem.getName();
-                newField(Const.TEXT_FIELD, mode, item, name, value,
-                        references[NAME], OBLIGATORY);
+                helper.type = Const.TEXT_FIELD;
+                helper.name = name;
+                helper.value = (modelitem == null)?null:modelitem.getName();
+                helper.reference = references[NAME];
+                helper.obligatory = OBLIGATORY;
+
+                newField(helper);
                 
                 continue;
             }
             
             if (name.equals("item.length")) {
-                value = (modelitem == null)?null:Integer.toString(
+                helper.type = Const.TEXT_FIELD;
+                helper.name = name;
+                helper.value = (modelitem == null)?null:Integer.toString(
                         dataelement.getLength());
-                newField(Const.TEXT_FIELD, mode, item, name, value,
-                        references[LENGTH], OBLIGATORY);
+                helper.reference = references[LENGTH];
+                helper.obligatory = OBLIGATORY;
+
+                newField(helper);
                 
                 continue;
             }
             
             if (name.equals("item.key")) {
+                helper.type = Const.CHECKBOX;
+                helper.name = name;
+                helper.reference = null;
+                helper.obligatory = NON_OBLIGATORY;
+                
                 if (modelitem != null) {
                     model = modelitem.getDocumentModel();
                     if (mode == SHOW)
-                        value = model.isKey(modelitem)? "yes" : "no";
+                        helper.value = model.isKey(modelitem)? "yes" : "no";
                     else
-                        value =  model.isKey(modelitem)? "on" : "off";
+                        helper.value =  model.isKey(modelitem)? "on" : "off";
                 } else {
-                    value = (mode == SHOW)?"no" : "off";
+                    helper.value = (mode == SHOW)?"no" : "off";
                 }
-                
-                newField(Const.CHECKBOX, mode, item, name, value, null,
-                        NON_OBLIGATORY);
                 
                 continue;
             }
         
             if (name.equals("item.type")) {
+                helper.name = name;
+                helper.obligatory = NON_OBLIGATORY;
+                helper.reference = null;
                 
                 if (mode == SHOW) {
+                    helper.type = Const.TEXT;
+                    
                     switch (dataelement.getType()) {
                     case 0:
-                        value = "char";
+                        helper.value = "char";
                         break;
                     case 3:
-                        value = "numc";
+                        helper.value = "numc";
                         break;
                     default:
-                        value = "?";
+                        helper.value = "?";
                         break;
                     }
                     
-                    newField(Const.TEXT, mode, item, name, value, null,
-                            NON_OBLIGATORY);
-                } else {
-                    value = (modelitem == null)?null:Integer.toString(
-                            dataelement.getType());
-                    list = (ListBox)newField(Const.LIST_BOX, mode, item, name,
-                            value, null, OBLIGATORY);
+                    newField(helper);
                     
+                } else {
+                    helper.type = Const.LIST_BOX;
+                    helper.value = (modelitem == null)?null:Integer.toString(
+                            dataelement.getType());
+                    
+                    list = (ListBox)newField(helper);
                     list.add("char", Integer.toString(DataType.CHAR));
                     list.add("numc", Integer.toString(DataType.NUMC));
                 }
@@ -385,26 +417,29 @@ public class Main extends AbstractPage {
         view.addContainer(main);
     }
     
-    private final Element newField(Const type, int mode, TableItem item,
-            String name, String value, DataElement reference,
-            boolean obligatory) {
+    /**
+     * 
+     * @param helper
+     * @return
+     */
+    private final Element newField(FieldHelper helper) {
         Element element;
         InputComponent input;
-        Table table = item.getTable();
+        Table table = helper.item.getTable();
         
-        if (mode == SHOW) {
-            element = Shell.factory(table, Const.TEXT, name, null);
-            ((Text)element).setText(value);
+        if (helper.mode == SHOW) {
+            element = Shell.factory(table, Const.TEXT, helper.name, null);
+            ((Text)element).setText(helper.value);
         } else {
-            element = Shell.factory(table, type, name, null);
+            element = Shell.factory(table, helper.type, helper.name, null);
             
             input = (InputComponent)element;
-            input.setValue(value);
-            input.setDataElement(reference);
-            input.setObligatory(obligatory);
+            input.setValue(helper.value);
+            input.setDataElement(helper.reference);
+            input.setObligatory(helper.obligatory);
         }
         
-        item.add(element);
+        helper.item.add(element);
         
         return element;
     }
@@ -675,4 +710,13 @@ public class Main extends AbstractPage {
         vdata.export("model", model);
         vdata.redirect(null, "structure");
     }
+}
+
+class FieldHelper {
+    public Const type;
+    public int mode;
+    public TableItem item;
+    public String name, value;
+    public DataElement reference;
+    public boolean obligatory;
 }
