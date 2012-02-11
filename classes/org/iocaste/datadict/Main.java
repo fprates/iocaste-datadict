@@ -471,9 +471,14 @@ public class Main extends AbstractPage {
         switch (mode) {
         case UPDATE:
             documents.updateModel(model);
+            
             break;
         case CREATE:
             documents.createModel(model);
+            vdata.export("model", model);
+            vdata.export("mode", UPDATE);
+            vdata.setReloadableView(true);
+            
             break;
         }
         
