@@ -1,6 +1,8 @@
 package org.iocaste.datadict;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.iocaste.documents.common.DataElement;
@@ -18,10 +20,12 @@ import org.iocaste.shell.common.DataForm;
 import org.iocaste.shell.common.DataItem;
 import org.iocaste.shell.common.Element;
 import org.iocaste.shell.common.Form;
+import org.iocaste.shell.common.HtmlTag;
 import org.iocaste.shell.common.InputComponent;
 import org.iocaste.shell.common.ListBox;
 import org.iocaste.shell.common.SearchHelp;
 import org.iocaste.shell.common.Shell;
+import org.iocaste.shell.common.StandardContainer;
 import org.iocaste.shell.common.Table;
 import org.iocaste.shell.common.TableColumn;
 import org.iocaste.shell.common.TableItem;
@@ -137,6 +141,129 @@ public class Main extends AbstractPage {
     
     /**
      * 
+     * @param vdata
+     */
+    public final void generateclass(ViewData vdata) {
+        String settype;
+        DataForm form = (DataForm)vdata.getElement("structure.form");
+        Table itens = (Table)vdata.getElement("itens");
+        String value, classname = form.getValue("modelclass");
+        String[] parts = classname.split("\\.");
+        StringBuilder sb = new StringBuilder("package ");
+        StringBuilder getter = new StringBuilder();
+        StringBuilder setter = new StringBuilder();
+        int t = parts.length - 1;
+        byte modo = getMode(vdata);
+        List<String> code = new ArrayList<String>();
+        List<String> getters = new ArrayList<String>();
+        List<String> setters = new ArrayList<String>();
+        
+        for (int i = 0; i < parts.length; i++) {
+            if (i == t) {
+                classname = parts[i];
+                continue;
+            }
+            
+            sb.append(parts[i]);
+            sb.append((i == (t - 1))? ";" : ".");
+        }
+        
+        code.add(sb.toString());
+        code.add("");
+        
+        sb.setLength(0);
+        sb.append("public class ").append(classname).append(" {");
+        code.add(sb.toString());
+        
+        for (TableItem item : itens.getItens()) {
+            sb.setLength(0);
+            getter.setLength(0);
+            setter.setLength(0);
+            
+            value = getTableValue(modo, item, "item.type");
+            if (modo == SHOW) {
+                if (value.equals("char"))
+                    value = "0";
+                
+                if (value.equals("numc"))
+                    value = "3";
+            }
+            
+            switch (Integer.parseInt(value)) {
+            case 0:
+                sb.append("    private String ");
+                getter.append("    public final String get");
+                setter.append("    public final void set");
+                settype = "String";
+                
+                break;
+            case 3:
+                sb.append("    private int ");
+                getter.append("    public final int get");
+                setter.append("    public final void set");
+                settype = "int";
+                
+                break;
+            default:
+                settype = "Object";
+                break;
+            }
+            
+            value = getTableValue(modo, item, "item.classfield");
+            sb.append(value).append(";");
+            code.add(sb.toString());
+            
+            /*
+             *  public final ? get?() {
+             *  return ?;
+             *  }
+             */
+            getter.append(value.substring(0, 1).toUpperCase()).
+                    append(value.substring(1)).append("() {");            
+            getters.add(getter.toString());
+            
+            getter.setLength(0);
+            getter.append("        return ").append(value).append(";");
+            getters.add(getter.toString());
+            getters.add("    }");
+            getters.add("");
+            
+            /*
+             * public final void set?(? ?) {
+             * this.? = ?;
+             * }
+             */
+            setter.append(value.substring(0, 1).toUpperCase()).
+                    append(value.substring(1)).append("(").append(settype).
+                    append(" ").append(value).append(") {");            
+            setters.add(setter.toString());
+            
+            setter.setLength(0);
+            setter.append("        this.").append(value).append(" = ").
+                    append(value).append(";");
+            setters.add(setter.toString());
+            setters.add("    }");
+            setters.add("");
+        }
+        
+        sb.setLength(0);
+        sb.append("    public ").append(classname).append("() { }");
+        code.add("");
+        code.add(sb.toString());
+        
+        code.add("");
+        code.addAll(getters);
+        code.addAll(setters);
+        
+        code.add("}");
+        
+        vdata.export("code", code.toArray(new String[0]));
+        vdata.setReloadableView(true);
+        vdata.redirect(null, "list");
+    }
+    
+    /**
+     * 
      * @return
      */
     private final Map<ItensNames, DataElement> getFieldReferences()
@@ -178,14 +305,16 @@ public class Main extends AbstractPage {
     
     /**
      * 
+     * @param modo
      * @param item
      * @param name
      * @return
      */
-    private final String getTableValue(TableItem item, String name) {
-        InputComponent input = (InputComponent)item.get(name);
-        
-        return input.getValue();
+    private final String getTableValue(byte modo, TableItem item, String name) {
+        if (modo == SHOW)
+            return ((Text)item.get(name)).getText();
+        else
+            return ((InputComponent)item.get(name)).getValue();
     }
     
     /**
@@ -197,19 +326,20 @@ public class Main extends AbstractPage {
         String name, classfield, tablefield;
         String testname, testclassfield, testtablefield;
         Table itens = (Table)vdata.getElement("itens");
+        byte modo = getMode(vdata);
         
         for (TableItem item : itens.getItens()) {
-            name = getTableValue(item, "item.name");
-            classfield = getTableValue(item, "item.classfield");
-            tablefield = getTableValue(item, "item.tablefield");
+            name = getTableValue(modo, item, "item.name");
+            classfield = getTableValue(modo, item, "item.classfield");
+            tablefield = getTableValue(modo, item, "item.tablefield");
             
             for (TableItem test : itens.getItens()) {
                 if (item == test)
                     continue;
                 
-                testname = getTableValue(test, "item.name");
-                testclassfield = getTableValue(test, "item.classfield");
-                testtablefield = getTableValue(test, "item.tablefield");
+                testname = getTableValue(modo, test, "item.name");
+                testclassfield = getTableValue(modo, test, "item.classfield");
+                testtablefield = getTableValue(modo, test, "item.tablefield");
                 
                 if (name.equals(testname)) {
                     vdata.message(Const.ERROR, "item.name.duplicated");
@@ -353,6 +483,21 @@ public class Main extends AbstractPage {
     
     /**
      * 
+     * @param vdata
+     */
+    public final void list(ViewData vdata) {
+        Container container = new StandardContainer(null, "list");
+        String[] lines = (String[])vdata.getParameter("code");
+        HtmlTag code = new HtmlTag(container, "code");
+        
+        code.setLines(lines);
+        
+        vdata.addContainer(container);
+        vdata.setNavbarActionEnabled("back", true);
+    }
+    
+    /**
+     * 
      * @param view
      */
     public final void main(ViewData view) {
@@ -376,10 +521,10 @@ public class Main extends AbstractPage {
         modelname.setDataElement(dataelement);
         modelname.setObligatory(true);
         
-        modelform.addAction("create");
-        modelform.addAction("show");
-        modelform.addAction("update");
-        modelform.addAction("delete");
+        new Button(main, "create");
+        new Button(main, "show");
+        new Button(main, "update");
+        new Button(main, "delete");
         
         view.setFocus("modelname");
         view.setNavbarActionEnabled("back", true);
@@ -503,7 +648,7 @@ public class Main extends AbstractPage {
         DataForm structure = (DataForm)vdata.getElement("structure.form");
         Table itens = (Table)vdata.getElement("itens");
         DocumentModel model = new DocumentModel();
-        byte mode = getMode(vdata);
+        byte modo = getMode(vdata);
         int i = 0;
         
         if (hasItemDuplicated(vdata))
@@ -514,21 +659,23 @@ public class Main extends AbstractPage {
         model.setTableName(structure.getValue("modeltable"));
         
         for (TableItem item : itens.getItens()) {
-            itemname = getTableValue(item, "item.name");
+            itemname = getTableValue(modo, item, "item.name");
             
             dataelement = new DataElement();
             dataelement.setName(new StringBuilder(model.getName()).append(".").
                     append(itemname).toString());
             dataelement.setLength(Integer.parseInt(getTableValue(
-                    item, "item.length")));
+                    modo, item, "item.length")));
             dataelement.setType(Integer.parseInt(getTableValue(
-                    item, "item.type")));
+                    modo, item, "item.type")));
              
             modelitem = new DocumentModelItem();
             modelitem.setIndex(i++);
             modelitem.setName(itemname);
-            modelitem.setTableFieldName(getTableValue(item, "item.tablefield"));
-            modelitem.setAttributeName(getTableValue(item, "item.classfield"));
+            modelitem.setTableFieldName(getTableValue(
+                    modo, item, "item.tablefield"));
+            modelitem.setAttributeName(getTableValue(
+                    modo, item, "item.classfield"));
             modelitem.setDataElement(dataelement);
             modelitem.setDocumentModel(model);
             
@@ -545,7 +692,7 @@ public class Main extends AbstractPage {
             model.addKey(modelkey);
         }
         
-        switch (mode) {
+        switch (modo) {
         case UPDATE:
             documents.updateModel(model);
             
@@ -624,11 +771,14 @@ public class Main extends AbstractPage {
             new Button(main, "save");
             new Button(main, "add");
             new Button(main, "deleteitem");
+            
             break;
         
         case SHOW:
             itens.setMark(false);
             title = "datadict-view";
+            new Button(main, "generateclass");
+            
             break;
         
         case CREATE:
@@ -637,6 +787,7 @@ public class Main extends AbstractPage {
             new Button(main, "save");
             new Button(main, "add");
             new Button(main, "deleteitem");
+            
             break;
             
         default:
