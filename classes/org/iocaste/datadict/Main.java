@@ -31,17 +31,14 @@ public class Main extends AbstractPage {
     private static final byte SHOW = 1;
     private static final byte UPDATE = 2;
     
+    private static final byte MODELNAME = 0;
+    private static final byte MODELCLASS = 1;
+    private static final byte MODELTABLE = 2;
+    
     private static final byte TABLE_FIELD = 0;
     private static final byte CLASS_FIELD = 1;
     private static final byte NAME = 2;
     private static final byte LENGTH = 3;
-    
-    private static final String[] HEADER_NAMES = {
-        "modelname",
-        "modeltext",
-        "modelclass",
-        "modeltable"
-    };
     
     private static final String[] ITEM_NAMES = {
         "item.name",
@@ -132,40 +129,6 @@ public class Main extends AbstractPage {
         references[LENGTH] = docs.getDataElement("DATAELEMENT.LENGTH");
         
         return references;
-    }
-    
-    /**
-     * 
-     * @param name
-     * @return
-     */
-    private final DocumentModel getHeaderModel(String name) {
-        DocumentModelItem modelitem;
-        DataElement dataelement;
-        DocumentModel model = new DocumentModel();
-        int i = 0;
-        
-        for (String headername : HEADER_NAMES) {
-            dataelement = new DataElement();
-            dataelement.setLength(20);
-            
-            if (headername.equals("modelclass"))
-                dataelement.setUpcase(false);
-            else
-                dataelement.setUpcase(true);
-            
-            modelitem = new DocumentModelItem();
-            modelitem.setIndex(i++);
-            modelitem.setName(headername);
-            modelitem.setDocumentModel(model);
-            modelitem.setDataElement(dataelement);
-            
-            model.setName(name);
-            model.add(modelitem);
-        }
-        
-        return model;
-        
     }
     
     /**
@@ -384,9 +347,15 @@ public class Main extends AbstractPage {
      * @param mode
      */
     private final void prepareHeader(DataForm form, String modelname,
-            DocumentModel model, byte mode) {
+            DocumentModel model, byte mode) throws Exception {
         String name;
         DataItem dataitem;
+        DataElement[] references = new DataElement[3];
+        Documents docs = new Documents(this);
+        
+        references[MODELNAME] = docs.getDataElement("MODEL.NAME");
+        references[MODELTABLE] = docs.getDataElement("MODEL.TABLE");
+        references[MODELCLASS] = docs.getDataElement("MODEL.CLASS");
         
         for (Element element : form.getElements()) {
             if (!element.isDataStorable())
@@ -399,12 +368,15 @@ public class Main extends AbstractPage {
                 dataitem.setObligatory(false);
                 dataitem.setValue(modelname);
                 dataitem.setEnabled(false);
+                dataitem.setDataElement(references[MODELNAME]);
+                
                 continue;
             }
             
             if (name.equals("modeltable")) {
                 dataitem.setEnabled((mode == SHOW)?false:true);
                 dataitem.setObligatory((mode == SHOW)?false:true);
+                dataitem.setDataElement(references[MODELTABLE]);
                 
                 if (model == null)
                     continue;
@@ -416,6 +388,7 @@ public class Main extends AbstractPage {
             if (name.equals("modelclass")) {
                 dataitem.setEnabled((mode == SHOW)?false:true);
                 dataitem.setObligatory((mode == SHOW)?false:true);
+                dataitem.setDataElement(references[MODELCLASS]);
                 
                 if (model == null)
                     continue;
@@ -546,8 +519,11 @@ public class Main extends AbstractPage {
         Table itens = new Table(main, "itens");
         
         modelname = getModelName(vdata);
-        model = getHeaderModel(modelname);
-        structure.importModel(model);
+        new DataItem(structure, Const.TEXT_FIELD, "modelname");
+        new DataItem(structure, Const.TEXT_FIELD, "modeltext");
+        new DataItem(structure, Const.TEXT_FIELD, "modelclass");
+        new DataItem(structure, Const.TEXT_FIELD, "modeltable");
+        
         prepareHeader(structure, modelname, usermodel, mode);
         
         model = getItensModel("itens");
