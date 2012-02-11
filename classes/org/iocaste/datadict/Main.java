@@ -253,9 +253,12 @@ public class Main extends AbstractPage {
             if (name.equals("item.key")) {
                 if (modelitem != null) {
                     model = modelitem.getDocumentModel();
-                    value =  model.isKey(modelitem)? "on" : "off";
+                    if (mode == SHOW)
+                        value = model.isKey(modelitem)? "yes" : "no";
+                    else
+                        value =  model.isKey(modelitem)? "on" : "off";
                 } else {
-                    value = "off";
+                    value = (mode == SHOW)?"no" : "off";
                 }
                 
                 newField(Const.CHECKBOX, mode, item, name, value, null);
@@ -264,12 +267,24 @@ public class Main extends AbstractPage {
             }
         
             if (name.equals("item.type")) {
-                value = (modelitem == null)?null:Integer.toString(
-                        dataelement.getType());
                 
                 if (mode == SHOW) {
+                    switch (dataelement.getType()) {
+                    case 0:
+                        value = "char";
+                        break;
+                    case 3:
+                        value = "numc";
+                        break;
+                    default:
+                        value = "?";
+                        break;
+                    }
+                    
                     newField(Const.TEXT, mode, item, name, value, null);
                 } else {
+                    value = (modelitem == null)?null:Integer.toString(
+                            dataelement.getType());
                     list = (ListBox)newField(Const.LIST_BOX, mode, item, name,
                             value, null);
                     
